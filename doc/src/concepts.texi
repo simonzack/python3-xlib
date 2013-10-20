@@ -1,0 +1,12 @@
+@c The Python X Library -- concepts
+@c
+@c Copyright 2000 Peter Liljenberg
+@c
+
+@node Basic X Concepts
+@chapter Basic X Concepts
+
+Here you might find an introduction to X concepts sometime in the
+future.  For now, I just refer to the introduction parts of the standard
+X documentation.  A vast collection of X documentation links can be
+found at @uref{http://www.rahul.net/kenton/xsites.html}.
