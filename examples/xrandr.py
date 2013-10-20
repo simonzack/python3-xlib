@@ -36,14 +36,14 @@ class Window:
         if not self.d.has_extension('RANDR'):
             sys.stderr.write('%s: server does not have the RANDR extension\n'
                              % sys.argv[0])
-            print self.d.query_extension('RANDR')
+            print(self.d.query_extension('RANDR'))
             sys.stderr.write("\n".join(self.d.list_extensions()))
             if self.d.query_extension('RANDR') is None:
                 sys.exit(1)
 
         # print version
         r = self.d.xrandr_query_version()
-        print 'RANDR version %d.%d' % (r.major_version, r.minor_version)
+        print('RANDR version %d.%d' % (r.major_version, r.minor_version))
 
 
         # Grab the current screen
@@ -101,30 +101,30 @@ class Window:
 
         self.pp = pprint.PrettyPrinter(indent=4)
 
-        print "Screen info:"
+        print("Screen info:")
         self.pp.pprint(self.window.xrandr_get_screen_info()._data)
 
-        print "Screen size range:"
+        print("Screen size range:")
         self.pp.pprint(self.window.xrandr_get_screen_size_range()._data)
 
-        print "Primary output:"
+        print("Primary output:")
         self.pp.pprint(self.window.xrandr_get_output_primary()._data)
 
         resources = self.window.xrandr_get_screen_resources()._data
 
-        print "Modes:"
-        for mode_id, mode in self.parseModes(resources['mode_names'], resources['modes']).iteritems():
-            print "    %d: %s" % (mode_id, mode['name'])
+        print("Modes:")
+        for mode_id, mode in self.parseModes(resources['mode_names'], resources['modes']).items():
+            print("    %d: %s" % (mode_id, mode['name']))
 
         for output in resources['outputs']:
-            print "Output %d info:" % (output, )
+            print("Output %d info:" % (output, ))
             self.pp.pprint(self.d.xrandr_get_output_info(output, resources['config_timestamp'])._data)
 
         for crtc in resources['crtcs']:
-            print "CRTC %d info:" % (crtc, )
+            print("CRTC %d info:" % (crtc, ))
             self.pp.pprint(self.d.xrandr_get_crtc_info(crtc, resources['config_timestamp'])._data)
 
-        print "Raw screen resources:"
+        print("Raw screen resources:")
         self.pp.pprint(resources)
 
     def parseModes(self, mode_names, modes):
@@ -149,23 +149,23 @@ class Window:
 
             # Screen information has changed
             elif e.type == self.d.extension_event.ScreenChangeNotify:
-                print 'Screen change'
-                print self.pp.pprint(e._data)
+                print('Screen change')
+                print(self.pp.pprint(e._data))
 
             # CRTC information has changed
             elif e.type == self.d.extension_event.CrtcChangeNotify:
-                print 'CRTC change'
-                print self.pp.pprint(e._data)
+                print('CRTC change')
+                print(self.pp.pprint(e._data))
 
             # Output information has changed
             elif e.type == self.d.extension_event.OutputChangeNotify:
-                print 'Output change'
-                print self.pp.pprint(e._data)
+                print('Output change')
+                print(self.pp.pprint(e._data))
 
             # Output property information has changed
             elif e.type == self.d.extension_event.OutputPropertyNotify:
-                print 'Output property change'
-                print self.pp.pprint(e._data)
+                print('Output property change')
+                print(self.pp.pprint(e._data))
 
             # Somebody wants to tell us something
             elif e.type == X.ClientMessage:

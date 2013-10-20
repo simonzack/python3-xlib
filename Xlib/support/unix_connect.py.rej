@@ -1,0 +1,11 @@
+--- python-xlib-0.14+20091101.orig/Xlib/support/unix_connect.py	2013-10-11 14:19:21.117971349 -0400
++++ python-xlib-0.14+20091101/Xlib/support/unix_connect.py	2013-10-11 14:19:21.089971348 -0400
+@@ -166,7 +165,7 @@
+ 	# There might be more ways to spell 127.0.0.1 but
+ 	# 'localhost', yet this code fixes a the case of
+ 	# OpenSSH tunneling X.
+-	return get_auth('unix:%d' % dno, 'unix', dno)
++        return get_auth('unix:%d' % dno, 'unix', dno)
+ 
+     return auth_name, auth_data
+ 

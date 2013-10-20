@@ -16,11 +16,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# Standard modules
-import string
-
 # Xlib modules
-import X
+from Xlib import X
 
 # Xlib.protocol modules
 from Xlib.protocol import rq
@@ -78,7 +75,7 @@ class XError(rq.GetAttrData, Exception):
                   'major_opcode', 'minor_opcode'):
             s.append('%s = %s' % (f, self._data[f]))
 
-        return '%s: %s' % (self.__class__, string.join(s, ', '))
+        return '%s: %s' % (self.__class__, ', '.join(s))
 
 class XResourceError(XError):
     _fields = rq.Struct( rq.Card8('type'),  # Always 0

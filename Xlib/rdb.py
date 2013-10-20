@@ -22,13 +22,12 @@
 
 
 # Standard modules
-import string
-import types
 import re
 import sys
+import functools
 
 # Xlib modules
-from support import lock
+from Xlib.support import lock
 
 # Set up a few regexpes for parsing string representation of resources
 
@@ -69,7 +68,7 @@ class ResourceDB:
 
         """
 
-        if type(file) is types.StringType:
+        if type(file) is str:
             file = open(file, 'r')
 
         self.insert_string(file.read())
@@ -84,7 +83,7 @@ class ResourceDB:
         """
 
         # First split string into lines
-        lines = string.split(data, '\n')
+        lines = data.split('\n')
 
         while lines:
             line = lines[0]
@@ -122,15 +121,15 @@ class ResourceDB:
             for i in range(1, len(splits), 2):
                 s = splits[i]
                 if len(s) == 3:
-                    splits[i] = chr(string.atoi(s, 8))
+                    splits[i] = chr(int(s, 8))
                 elif s == 'n':
                     splits[i] = '\n'
 
             # strip the last value part to get rid of any
             # unescaped blanks
-            splits[-1] = string.rstrip(splits[-1])
+            splits[-1] = splits[-1].rstrip()
 
-            value = string.join(splits, '')
+            value = ''.join(splits)
 
             self.insert(res, value)
 
@@ -172,7 +171,7 @@ class ResourceDB:
         for i in range(1, len(parts), 2):
 
             # Create a new mapping/value group
-            if not db.has_key(parts[i - 1]):
+            if parts[i - 1] not in db:
                 db[parts[i - 1]] = ({}, {})
 
             # Use second mapping if a loose binding, first otherwise
@@ -182,24 +181,25 @@ class ResourceDB:
                 db = db[parts[i - 1]][0]
 
         # Insert value into the derived db
-        if db.has_key(parts[-1]):
+        if parts[-1] in db:
             db[parts[-1]] = db[parts[-1]][:2] + (value, )
         else:
             db[parts[-1]] = ({}, {}, value)
 
         self.lock.release()
 
-    def __getitem__(self, (name, cls)):
+    def __getitem__(self, nc):
         """db[name, class]
 
         Return the value matching the resource identified by NAME and
         CLASS.  If no match is found, KeyError is raised.
         """
+        name, cls = nc
 
         # Split name and class into their parts
 
-        namep = string.split(name, '.')
-        clsp = string.split(cls, '.')
+        namep = name.split('.')
+        clsp = cls.split('.')
 
         # It is an error for name and class to have different number
         # of parts
@@ -218,13 +218,13 @@ class ResourceDB:
 
             # Precedence order: name -> class -> ?
 
-            if self.db.has_key(namep[0]):
+            if namep[0] in self.db:
                 bin_insert(matches, _Match((NAME_MATCH, ), self.db[namep[0]]))
 
-            if self.db.has_key(clsp[0]):
+            if clsp[0] in self.db:
                 bin_insert(matches, _Match((CLASS_MATCH, ), self.db[clsp[0]]))
 
-            if self.db.has_key('?'):
+            if '?' in self.db:
                 bin_insert(matches, _Match((WILD_MATCH, ), self.db['?']))
 
 
@@ -240,7 +240,7 @@ class ResourceDB:
 
             # Special case for resources which begins with a loose
             # binding, e.g. '*foo.bar'
-            if self.db.has_key(''):
+            if '' in self.db:
                 bin_insert(matches, _Match((), self.db[''][1]))
 
 
@@ -376,11 +376,12 @@ class ResourceDB:
         return argv
 
 
+@functools.total_ordering
 class _Match:
     def __init__(self, path, dbs):
         self.path = path
 
-        if type(dbs) is types.TupleType:
+        if type(dbs) is tuple:
             self.skip = 0
             self.group = dbs
 
@@ -388,22 +389,25 @@ class _Match:
             self.skip = 1
             self.db = dbs
 
-    def __cmp__(self, other):
-        return cmp(self.path, other.path)
+    def __eq__(self, other):
+        return self.path == other.path
+
+    def __lt__(self, other):
+        return self.path < other.path
 
     def match_length(self):
         return len(self.path)
 
     def match(self, part, score):
         if self.skip:
-            if self.db.has_key(part):
+            if part in self.db:
                 return _Match(self.path + (score, ), self.db[part])
             else:
                 return None
         else:
-            if self.group[0].has_key(part):
+            if part in self.group[0]:
                 return _Match(self.path + (score, ), self.group[0][part])
-            elif self.group[1].has_key(part):
+            elif part in self.group[1]:
                 return _Match(self.path + (score + 1, ), self.group[1][part])
             else:
                 return None
@@ -460,7 +464,7 @@ def bin_insert(list, element):
     upper = len(list) - 1
 
     while lower <= upper:
-        center = (lower + upper) / 2
+        center = (lower + upper) // 2
         if element < list[center]:
             upper = center - 1
         elif element > list[center]:
@@ -482,7 +486,7 @@ def update_db(dest, src):
     for comp, group in src.items():
 
         # DEST already contains this component, update it
-        if dest.has_key(comp):
+        if comp in dest:
 
             # Update tight and loose binding databases
             update_db(dest[comp][0], group[0])
@@ -536,7 +540,7 @@ def output_escape(value):
                       ('\000', '\\000'),
                       ('\n', '\\n')):
 
-        value = string.replace(value, char, esc)
+        value = value.replace(char, esc)
 
     # If first or last character is space or tab, escape them.
     if value[0] in ' \t':

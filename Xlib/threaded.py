@@ -16,7 +16,12 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import thread
+try:
+    # Python 3
+    import _thread as thread
+except ImportError:
+    # Python 2
+    import thread
 
 # We change the allocate_lock function in Xlib.support.lock to
 # return a basic Python lock, instead of the default dummy lock

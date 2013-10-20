@@ -17,34 +17,31 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # Python modules
-import new
+import types
 
 # Xlib modules
-import error
-import ext
-import X
+from Xlib import error, ext, X
 
 # Xlib.protocol modules
-import protocol.display
-from protocol import request, event, rq
+from Xlib.protocol import display, request, event, rq
 
 # Xlib.xobjects modules
-import xobject.resource
-import xobject.drawable
-import xobject.fontable
-import xobject.colormap
-import xobject.cursor
+import Xlib.xobject.resource
+import Xlib.xobject.drawable
+import Xlib.xobject.fontable
+import Xlib.xobject.colormap
+import Xlib.xobject.cursor
 
 _resource_baseclasses = {
-    'resource': xobject.resource.Resource,
-    'drawable': xobject.drawable.Drawable,
-    'window': xobject.drawable.Window,
-    'pixmap': xobject.drawable.Pixmap,
-    'fontable': xobject.fontable.Fontable,
-    'font': xobject.fontable.Font,
-    'gc': xobject.fontable.GC,
-    'colormap': xobject.colormap.Colormap,
-    'cursor': xobject.cursor.Cursor,
+    'resource': Xlib.xobject.resource.Resource,
+    'drawable': Xlib.xobject.drawable.Drawable,
+    'window': Xlib.xobject.drawable.Window,
+    'pixmap': Xlib.xobject.drawable.Pixmap,
+    'fontable': Xlib.xobject.fontable.Fontable,
+    'font': Xlib.xobject.fontable.Font,
+    'gc': Xlib.xobject.fontable.GC,
+    'colormap': Xlib.xobject.colormap.Colormap,
+    'cursor': Xlib.xobject.cursor.Cursor,
     }
 
 _resource_hierarchy = {
@@ -55,18 +52,18 @@ _resource_hierarchy = {
     'fontable': ('font', 'gc')
     }
 
-class _BaseDisplay(protocol.display.Display):
+class _BaseDisplay(display.Display):
     resource_classes = _resource_baseclasses.copy()
 
     # Implement a cache of atom names, used by Window objects when
     # dealing with some ICCCM properties not defined in Xlib.Xatom
 
     def __init__(self, *args, **keys):
-        apply(protocol.display.Display.__init__, (self, ) + args, keys)
+        display.Display.__init__(*(self, ) + args, **keys)
         self._atom_cache = {}
 
     def get_atom(self, atomname, only_if_exists=0):
-        if self._atom_cache.has_key(atomname):
+        if atomname in self._atom_cache:
             return self._atom_cache[atomname]
 
         r = request.InternAtom(display = self, name = atomname, only_if_exists = only_if_exists)
@@ -119,11 +116,11 @@ class Display:
 
 
         # Finalize extensions by creating new classes
-        for type, dict in self.class_extension_dicts.items():
-            origcls = self.display.resource_classes[type]
-            self.display.resource_classes[type] = new.classobj(origcls.__name__,
-                                                               (origcls,),
-                                                               dict)
+        for type_, dict in self.class_extension_dicts.items():
+            origcls = self.display.resource_classes[type_]
+            self.display.resource_classes[type_] = type(origcls.__name__,
+                                                        (origcls, object),
+                                                        dict)
 
         # Problem: we have already created some objects without the
         # extensions: the screen roots and default colormaps.
@@ -211,7 +208,7 @@ class Display:
     def __getattr__(self, attr):
         try:
             function = self.display_extension_methods[attr]
-            return new.instancemethod(function, self, self.__class__)
+            return types.MethodType(function, self)
         except KeyError:
             raise AttributeError(attr)
 
@@ -272,13 +269,11 @@ class Display:
                 if hasattr(cls, name):
                     raise error.MethodOverrideError('attempting to replace %s method: %s' % (type, name))
 
-                method = new.instancemethod(function, None, cls)
-
                 # Maybe should check extension overrides too
                 try:
-                    self.class_extension_dicts[type][name] = method
+                    self.class_extension_dicts[type][name] = function
                 except KeyError:
-                    self.class_extension_dicts[type] = { name: method }
+                    self.class_extension_dicts[type] = { name: function }
 
     def extension_add_event(self, code, evt, name = None):
         """extension_add_event(code, evt, [name])
@@ -292,8 +287,8 @@ class Display:
         extension_event.
         """
 
-        newevt = new.classobj(evt.__name__, evt.__bases__,
-                              evt.__dict__.copy())
+        newevt = type(evt.__name__, evt.__bases__,
+                      evt.__dict__.copy())
         newevt._code = code
 
         self.display.add_extension_event(code, newevt)
@@ -395,7 +390,7 @@ class Display:
             index = 0
             for sym in syms:
                 if sym != X.NoSymbol:
-                    if self._keymap_syms.has_key(sym):
+                    if sym in self._keymap_syms:
                         symcodes = self._keymap_syms[sym]
                         symcodes.append((index, code))
                         symcodes.sort()
@@ -595,7 +590,7 @@ class Display:
             self.display.free_resource_id(fid)
             return None
         else:
-            cls = self.display.get_resource_class('font', xobject.fontable.Font)
+            cls = self.display.get_resource_class('font', Xlib.xobject.fontable.Font)
             return cls(self.display, fid, owner = 1)
 
     def list_fonts(self, pattern, max_names):

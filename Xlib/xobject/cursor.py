@@ -17,8 +17,7 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from Xlib.protocol import request
-
-import resource
+from Xlib.xobject import resource
 
 class Cursor(resource.Resource):
     __cursor__ = resource.Resource.__resource__
@@ -29,9 +28,9 @@ class Cursor(resource.Resource):
                            cursor = self.id)
         self.display.free_resource_id(self.id)
 
-    def recolor(self, (fore_red, fore_green, fore_blue),
-                (back_red, back_green, back_blue), onerror = None):
-
+    def recolor(self, f_rgb, b_rgb, onerror = None):
+        back_red, back_green, back_blue = b_rgb
+        fore_red, fore_green, fore_blue = f_rgb
         request.RecolorCursor(display = self.display,
                               onerror = onerror,
                               cursor = self.id,

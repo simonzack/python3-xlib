@@ -1139,7 +1139,7 @@ class OutputPropertyNotify(rq.Event):
 # Initialization #
 
 def init(disp, info):
-    print info.__class__
+    print(info.__class__)
 
     disp.extension_add_method('display', 'xrandr_query_version', query_version)
     disp.extension_add_method('window', 'xrandr_select_input', select_input)

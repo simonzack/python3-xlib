@@ -1,0 +1,11 @@
+--- python-xlib-0.14+20091101.orig/Xlib/protocol/display.py	2013-10-11 14:19:21.117971349 -0400
++++ python-xlib-0.14+20091101/Xlib/protocol/display.py	2013-10-11 14:19:21.085971348 -0400
+@@ -543,7 +552,7 @@
+                 if recieving:
+                     try:
+                         bytes_recv = self.socket.recv(4096)
+-                    except socket.error, err:
++                    except socket.error as err:
+                         self.close_internal('server: %s' % err[1])
+                         raise self.socket_error
+ 

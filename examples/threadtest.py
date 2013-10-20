@@ -7,7 +7,13 @@ sys.path[1:1] = [os.path.join(sys.path[0], '..')]
 
 from Xlib import display, X, threaded
 import time
-import thread
+
+try:
+    # Python 3
+    import _thread as thread
+except ImportError:
+    # Python 2
+    import thread
 
 def redraw(win, gc):
     # win.clear_area()
@@ -16,7 +22,7 @@ def redraw(win, gc):
 def blink(display, win, gc, cols):
     while 1:
         time.sleep(2)
-        print 'Changing color', cols[0]
+        print('Changing color %i' % cols[0])
         gc.change(foreground = cols[0])
         cols = (cols[1], cols[0])
         redraw(win, gc)

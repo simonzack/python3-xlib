@@ -3,7 +3,6 @@
 import sys, os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-import string
 import unittest
 from Xlib.protocol import request, rq, event
 import Xlib.protocol.event
@@ -13,7 +12,7 @@ import array
 
 class CmpArray:
     def __init__(self, *args, **kws):
-        self.array = apply(array.array, args, kws)
+        self.array = array.array(*args, **kws)
 
     def __len__(self):
         return len(self.array)
@@ -21,16 +20,25 @@ class CmpArray:
     def __getslice__(self, x, y):
         return list(self.array[x:y])
 
+    def __getitem__(self, n):
+        if isinstance(n, slice):
+            return list(self.array.__getitem__(n))
+        else:
+            return self.array[n]
+
     def __getattr__(self, attr):
         return getattr(self.array, attr)
 
-    def __cmp__(self, other):
-        return cmp(self.array.tolist(), other)
+    def __eq__(self, other):
+        return self.array.tolist() == other
+
+    def __ne__(self, other):
+        return self.array.tolist() != other
 
 rq.array = CmpArray
 
 def tohex(bin):
-    bin = string.join(map(lambda c: '\\x%02x' % ord(c), bin), '')
+    bin = ''.join(map(lambda c: '\\x%02x' % c, bin))
 
     bins = []
     for i in range(0, len(bin), 16):
@@ -43,7 +51,7 @@ def tohex(bin):
         except IndexError:
             bins2.append("'%s'" % bins[i])
 
-    return string.join(bins2, ' \\\n            ')
+    return ' \\\n            '.join(bins2)
 
 class DummyDisplay:
     def get_resource_class(self, x):
@@ -75,22 +83,22 @@ class TestCreateWindow(unittest.TestCase):
             'depth': 186,
             'width': 51466,
             }
-        self.req_bin_0 = '\x01\xba\x00\x17' '\x6d\x03\x01\x24' \
-            '\x74\xdb\x41\x4e' '\xae\xdd\xf0\x2f' \
-            '\xc9\x0a\x96\xd0' '\x86\x93\x00\x00' \
-            '\x17\xba\x10\x13' '\x00\x00\x7f\xff' \
-            '\x5e\x67\x63\x43' '\x0c\x77\x07\x07' \
-            '\x76\xc4\x0c\xaa' '\x7f\x48\x9d\x8c' \
-            '\x00\x00\x00\x00' '\x03\x00\x00\x00' \
-            '\x02\x00\x00\x00' '\x56\xac\x9b\x9d' \
-            '\x21\x76\x49\x57' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x15\xf2\xee\x1c' \
-            '\x23\x97\xad\x71' '\x16\x7e\xec\x01' \
-            '\x55\xfd\xbc\xc5'
+        self.req_bin_0 = b'\x01\xba\x00\x17' b'\x6d\x03\x01\x24' \
+            b'\x74\xdb\x41\x4e' b'\xae\xdd\xf0\x2f' \
+            b'\xc9\x0a\x96\xd0' b'\x86\x93\x00\x00' \
+            b'\x17\xba\x10\x13' b'\x00\x00\x7f\xff' \
+            b'\x5e\x67\x63\x43' b'\x0c\x77\x07\x07' \
+            b'\x76\xc4\x0c\xaa' b'\x7f\x48\x9d\x8c' \
+            b'\x00\x00\x00\x00' b'\x03\x00\x00\x00' \
+            b'\x02\x00\x00\x00' b'\x56\xac\x9b\x9d' \
+            b'\x21\x76\x49\x57' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x15\xf2\xee\x1c' \
+            b'\x23\x97\xad\x71' b'\x16\x7e\xec\x01' \
+            b'\x55\xfd\xbc\xc5'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CreateWindow._request.to_binary, (), self.req_args_0)
+        bin = request.CreateWindow._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -114,19 +122,19 @@ class TestChangeWindowAttributes(unittest.TestCase):
             'window': 1813552124,
             'attrs': {'backing_pixel': 59516078, 'cursor': 1682969315, 'background_pixmap': 370313360, 'border_pixmap': 1158771722, 'backing_planes': 1432315664, 'win_gravity': 3, 'backing_store': 1, 'event_mask': 1054128649, 'save_under': 0, 'background_pixel': 1953340842, 'colormap': 1462101672, 'border_pixel': 287436510, 'bit_gravity': 10, 'do_not_propagate_mask': 1283834625, 'override_redirect': 0},
             }
-        self.req_bin_0 = '\x02\x00\x00\x12' '\x6c\x18\x9b\xfc' \
-            '\x00\x00\x7f\xff' '\x16\x12\x88\x90' \
-            '\x74\x6d\x9d\xaa' '\x45\x11\x74\x0a' \
-            '\x11\x21\xee\xde' '\x0a\x00\x00\x00' \
-            '\x03\x00\x00\x00' '\x01\x00\x00\x00' \
-            '\x55\x5f\x67\x10' '\x03\x8c\x24\xae' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x3e\xd4\xba\x09' '\x4c\x85\xc3\x01' \
-            '\x57\x25\xe6\xa8' '\x64\x50\x12\xe3'
+        self.req_bin_0 = b'\x02\x00\x00\x12' b'\x6c\x18\x9b\xfc' \
+            b'\x00\x00\x7f\xff' b'\x16\x12\x88\x90' \
+            b'\x74\x6d\x9d\xaa' b'\x45\x11\x74\x0a' \
+            b'\x11\x21\xee\xde' b'\x0a\x00\x00\x00' \
+            b'\x03\x00\x00\x00' b'\x01\x00\x00\x00' \
+            b'\x55\x5f\x67\x10' b'\x03\x8c\x24\xae' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x3e\xd4\xba\x09' b'\x4c\x85\xc3\x01' \
+            b'\x57\x25\xe6\xa8' b'\x64\x50\x12\xe3'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeWindowAttributes._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeWindowAttributes._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -149,7 +157,7 @@ class TestGetWindowAttributes(unittest.TestCase):
         self.req_args_0 = {
             'window': 1931593850,
             }
-        self.req_bin_0 = '\x03\x00\x00\x02' '\x73\x21\xc8\x7a'
+        self.req_bin_0 = b'\x03\x00\x00\x02' b'\x73\x21\xc8\x7a'
 
         self.reply_args_0 = {
             'sequence_number': 60057,
@@ -169,16 +177,16 @@ class TestGetWindowAttributes(unittest.TestCase):
             'do_not_propagate_mask': 33787,
             'override_redirect': 0,
             }
-        self.reply_bin_0 = '\x01\x93\xea\x99' '\x00\x00\x00\x03' \
-            '\x28\xf8\xb5\x19' '\x47\x6c\xfd\x9d' \
-            '\x3b\x04\x67\x99' '\x08\x23\xc5\x49' \
-            '\x00\x00\xb9\x00' '\x45\x39\x51\x8e' \
-            '\x10\x1b\x49\x0c' '\x4f\x6a\xcc\x0f' \
-            '\x83\xfb\x00\x00'
+        self.reply_bin_0 = b'\x01\x93\xea\x99' b'\x00\x00\x00\x03' \
+            b'\x28\xf8\xb5\x19' b'\x47\x6c\xfd\x9d' \
+            b'\x3b\x04\x67\x99' b'\x08\x23\xc5\x49' \
+            b'\x00\x00\xb9\x00' b'\x45\x39\x51\x8e' \
+            b'\x10\x1b\x49\x0c' b'\x4f\x6a\xcc\x0f' \
+            b'\x83\xfb\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetWindowAttributes._request.to_binary, (), self.req_args_0)
+        bin = request.GetWindowAttributes._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -196,7 +204,7 @@ class TestGetWindowAttributes(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetWindowAttributes._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetWindowAttributes._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -219,11 +227,11 @@ class TestDestroyWindow(unittest.TestCase):
         self.req_args_0 = {
             'window': 1622184267,
             }
-        self.req_bin_0 = '\x04\x00\x00\x02' '\x60\xb0\x91\x4b'
+        self.req_bin_0 = b'\x04\x00\x00\x02' b'\x60\xb0\x91\x4b'
 
 
     def testPackRequest0(self):
-        bin = apply(request.DestroyWindow._request.to_binary, (), self.req_args_0)
+        bin = request.DestroyWindow._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -246,11 +254,11 @@ class TestDestroySubWindows(unittest.TestCase):
         self.req_args_0 = {
             'window': 1000376476,
             }
-        self.req_bin_0 = '\x05\x00\x00\x02' '\x3b\xa0\x88\x9c'
+        self.req_bin_0 = b'\x05\x00\x00\x02' b'\x3b\xa0\x88\x9c'
 
 
     def testPackRequest0(self):
-        bin = apply(request.DestroySubWindows._request.to_binary, (), self.req_args_0)
+        bin = request.DestroySubWindows._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -274,11 +282,11 @@ class TestChangeSaveSet(unittest.TestCase):
             'window': 1577523459,
             'mode': 0,
             }
-        self.req_bin_0 = '\x06\x00\x00\x02' '\x5e\x07\x19\x03'
+        self.req_bin_0 = b'\x06\x00\x00\x02' b'\x5e\x07\x19\x03'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeSaveSet._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeSaveSet._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -304,12 +312,12 @@ class TestReparentWindow(unittest.TestCase):
             'x': -5207,
             'y': -22675,
             }
-        self.req_bin_0 = '\x07\x00\x00\x04' '\x4d\x87\xa0\xa0' \
-            '\x04\x4d\x83\x68' '\xeb\xa9\xa7\x6d'
+        self.req_bin_0 = b'\x07\x00\x00\x04' b'\x4d\x87\xa0\xa0' \
+            b'\x04\x4d\x83\x68' b'\xeb\xa9\xa7\x6d'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ReparentWindow._request.to_binary, (), self.req_args_0)
+        bin = request.ReparentWindow._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -332,11 +340,11 @@ class TestMapWindow(unittest.TestCase):
         self.req_args_0 = {
             'window': 61469476,
             }
-        self.req_bin_0 = '\x08\x00\x00\x02' '\x03\xa9\xf3\x24'
+        self.req_bin_0 = b'\x08\x00\x00\x02' b'\x03\xa9\xf3\x24'
 
 
     def testPackRequest0(self):
-        bin = apply(request.MapWindow._request.to_binary, (), self.req_args_0)
+        bin = request.MapWindow._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -359,11 +367,11 @@ class TestMapSubwindows(unittest.TestCase):
         self.req_args_0 = {
             'window': 818738118,
             }
-        self.req_bin_0 = '\x09\x00\x00\x02' '\x30\xcc\xf3\xc6'
+        self.req_bin_0 = b'\x09\x00\x00\x02' b'\x30\xcc\xf3\xc6'
 
 
     def testPackRequest0(self):
-        bin = apply(request.MapSubwindows._request.to_binary, (), self.req_args_0)
+        bin = request.MapSubwindows._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -386,11 +394,11 @@ class TestUnmapWindow(unittest.TestCase):
         self.req_args_0 = {
             'window': 1923663468,
             }
-        self.req_bin_0 = '\x0a\x00\x00\x02' '\x72\xa8\xc6\x6c'
+        self.req_bin_0 = b'\x0a\x00\x00\x02' b'\x72\xa8\xc6\x6c'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UnmapWindow._request.to_binary, (), self.req_args_0)
+        bin = request.UnmapWindow._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -413,11 +421,11 @@ class TestUnmapSubwindows(unittest.TestCase):
         self.req_args_0 = {
             'window': 999740194,
             }
-        self.req_bin_0 = '\x0b\x00\x00\x02' '\x3b\x96\xd3\x22'
+        self.req_bin_0 = b'\x0b\x00\x00\x02' b'\x3b\x96\xd3\x22'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UnmapSubwindows._request.to_binary, (), self.req_args_0)
+        bin = request.UnmapSubwindows._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -441,15 +449,15 @@ class TestConfigureWindow(unittest.TestCase):
             'window': 190634459,
             'attrs': {'height': 57788, 'stack_mode': 2, 'border_width': -320, 'width': 53674, 'x': -2248, 'y': -29960, 'sibling': 1012823324},
             }
-        self.req_bin_0 = '\x0c\x00\x00\x0a' '\x0b\x5c\xd9\xdb' \
-            '\x00\x7f\x00\x00' '\xf7\x38\x00\x00' \
-            '\x8a\xf8\x00\x00' '\xd1\xaa\x00\x00' \
-            '\xe1\xbc\x00\x00' '\xfe\xc0\x00\x00' \
-            '\x3c\x5e\x75\x1c' '\x02\x00\x00\x00'
+        self.req_bin_0 = b'\x0c\x00\x00\x0a' b'\x0b\x5c\xd9\xdb' \
+            b'\x00\x7f\x00\x00' b'\xf7\x38\x00\x00' \
+            b'\x8a\xf8\x00\x00' b'\xd1\xaa\x00\x00' \
+            b'\xe1\xbc\x00\x00' b'\xfe\xc0\x00\x00' \
+            b'\x3c\x5e\x75\x1c' b'\x02\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ConfigureWindow._request.to_binary, (), self.req_args_0)
+        bin = request.ConfigureWindow._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -473,11 +481,11 @@ class TestCirculateWindow(unittest.TestCase):
             'window': 1712979067,
             'direction': 1,
             }
-        self.req_bin_0 = '\x0d\x01\x00\x02' '\x66\x19\xfc\x7b'
+        self.req_bin_0 = b'\x0d\x01\x00\x02' b'\x66\x19\xfc\x7b'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CirculateWindow._request.to_binary, (), self.req_args_0)
+        bin = request.CirculateWindow._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -500,7 +508,7 @@ class TestGetGeometry(unittest.TestCase):
         self.req_args_0 = {
             'drawable': 680179490,
             }
-        self.req_bin_0 = '\x0e\x00\x00\x02' '\x28\x8a\xb7\x22'
+        self.req_bin_0 = b'\x0e\x00\x00\x02' b'\x28\x8a\xb7\x22'
 
         self.reply_args_0 = {
             'height': 64954,
@@ -512,14 +520,14 @@ class TestGetGeometry(unittest.TestCase):
             'depth': 204,
             'width': 38433,
             }
-        self.reply_bin_0 = '\x01\xcc\x9a\x2d' '\x00\x00\x00\x00' \
-            '\x24\x55\x8d\x71' '\xfb\x1b\xd4\x54' \
-            '\x96\x21\xfd\xba' '\x01\xf0\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\xcc\x9a\x2d' b'\x00\x00\x00\x00' \
+            b'\x24\x55\x8d\x71' b'\xfb\x1b\xd4\x54' \
+            b'\x96\x21\xfd\xba' b'\x01\xf0\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetGeometry._request.to_binary, (), self.req_args_0)
+        bin = request.GetGeometry._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -537,7 +545,7 @@ class TestGetGeometry(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetGeometry._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetGeometry._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -560,7 +568,7 @@ class TestQueryTree(unittest.TestCase):
         self.req_args_0 = {
             'window': 2052496265,
             }
-        self.req_bin_0 = '\x0f\x00\x00\x02' '\x7a\x56\x9b\x89'
+        self.req_bin_0 = b'\x0f\x00\x00\x02' b'\x7a\x56\x9b\x89'
 
         self.reply_args_0 = {
             'sequence_number': 33887,
@@ -568,18 +576,18 @@ class TestQueryTree(unittest.TestCase):
             'root': 1856577120,
             'parent': 2105827407,
             }
-        self.reply_bin_0 = '\x01\x00\x84\x5f' '\x00\x00\x00\x07' \
-            '\x6e\xa9\x1e\x60' '\x7d\x84\x60\x4f' \
-            '\x00\x07\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x6b\x09\x3d\x72' '\x59\x14\x21\xa5' \
-            '\x2c\x9a\x2c\x42' '\x2b\x7b\x78\xa1' \
-            '\x4b\x39\x79\x79' '\x03\xd4\x32\x73' \
-            '\x40\xdd\x8e\x53'
+        self.reply_bin_0 = b'\x01\x00\x84\x5f' b'\x00\x00\x00\x07' \
+            b'\x6e\xa9\x1e\x60' b'\x7d\x84\x60\x4f' \
+            b'\x00\x07\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x6b\x09\x3d\x72' b'\x59\x14\x21\xa5' \
+            b'\x2c\x9a\x2c\x42' b'\x2b\x7b\x78\xa1' \
+            b'\x4b\x39\x79\x79' b'\x03\xd4\x32\x73' \
+            b'\x40\xdd\x8e\x53'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryTree._request.to_binary, (), self.req_args_0)
+        bin = request.QueryTree._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -597,7 +605,7 @@ class TestQueryTree(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryTree._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryTree._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -621,22 +629,22 @@ class TestInternAtom(unittest.TestCase):
             'only_if_exists': 0,
             'name': 'fuzzy_prop',
             }
-        self.req_bin_0 = '\x10\x00\x00\x05' '\x00\x0a\x00\x00' \
-            '\x66\x75\x7a\x7a' '\x79\x5f\x70\x72' \
-            '\x6f\x70\x00\x00'
+        self.req_bin_0 = b'\x10\x00\x00\x05' b'\x00\x0a\x00\x00' \
+            b'\x66\x75\x7a\x7a' b'\x79\x5f\x70\x72' \
+            b'\x6f\x70\x00\x00'
 
         self.reply_args_0 = {
             'atom': 48723297,
             'sequence_number': 35223,
             }
-        self.reply_bin_0 = '\x01\x00\x89\x97' '\x00\x00\x00\x00' \
-            '\x02\xe7\x75\x61' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x89\x97' b'\x00\x00\x00\x00' \
+            b'\x02\xe7\x75\x61' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.InternAtom._request.to_binary, (), self.req_args_0)
+        bin = request.InternAtom._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -654,7 +662,7 @@ class TestInternAtom(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.InternAtom._reply.to_binary, (), self.reply_args_0)
+        bin = request.InternAtom._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -677,21 +685,21 @@ class TestGetAtomName(unittest.TestCase):
         self.req_args_0 = {
             'atom': 1022286544,
             }
-        self.req_bin_0 = '\x11\x00\x00\x02' '\x3c\xee\xda\xd0'
+        self.req_bin_0 = b'\x11\x00\x00\x02' b'\x3c\xee\xda\xd0'
 
         self.reply_args_0 = {
             'sequence_number': 22699,
             'name': 'WM_CLASS',
             }
-        self.reply_bin_0 = '\x01\x00\x58\xab' '\x00\x00\x00\x02' \
-            '\x00\x08\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x57\x4d\x5f\x43' '\x4c\x41\x53\x53'
+        self.reply_bin_0 = b'\x01\x00\x58\xab' b'\x00\x00\x00\x02' \
+            b'\x00\x08\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x57\x4d\x5f\x43' b'\x4c\x41\x53\x53'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetAtomName._request.to_binary, (), self.req_args_0)
+        bin = request.GetAtomName._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -709,7 +717,7 @@ class TestGetAtomName(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetAtomName._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetAtomName._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -736,9 +744,9 @@ class TestChangeProperty(unittest.TestCase):
             'window': 266197951,
             'type': 1343008022,
             }
-        self.req_bin_0 = '\x12\x00\x00\x06' '\x0f\xdd\xdb\xbf' \
-            '\x7c\x4c\x97\x11' '\x50\x0c\xad\x16' \
-            '\x08\x00\x00\x00' '\x00\x00\x00\x00'
+        self.req_bin_0 = b'\x12\x00\x00\x06' b'\x0f\xdd\xdb\xbf' \
+            b'\x7c\x4c\x97\x11' b'\x50\x0c\xad\x16' \
+            b'\x08\x00\x00\x00' b'\x00\x00\x00\x00'
 
         self.req_args_1 = {
             'mode': 2,
@@ -747,10 +755,10 @@ class TestChangeProperty(unittest.TestCase):
             'window': 1522118044,
             'type': 121096013,
             }
-        self.req_bin_1 = '\x12\x02\x00\x07' '\x5a\xb9\xad\x9c' \
-            '\x1a\xce\x2e\xab' '\x07\x37\xc7\x4d' \
-            '\x08\x00\x00\x00' '\x00\x00\x00\x03' \
-            '\x66\x6f\x6f\x00'
+        self.req_bin_1 = b'\x12\x02\x00\x07' b'\x5a\xb9\xad\x9c' \
+            b'\x1a\xce\x2e\xab' b'\x07\x37\xc7\x4d' \
+            b'\x08\x00\x00\x00' b'\x00\x00\x00\x03' \
+            b'\x66\x6f\x6f\x00'
 
         self.req_args_2 = {
             'mode': 2,
@@ -759,10 +767,10 @@ class TestChangeProperty(unittest.TestCase):
             'window': 286324270,
             'type': 1547457396,
             }
-        self.req_bin_2 = '\x12\x02\x00\x07' '\x11\x10\xf6\x2e' \
-            '\x3c\x30\xf5\x5a' '\x5c\x3c\x53\x74' \
-            '\x08\x00\x00\x00' '\x00\x00\x00\x04' \
-            '\x7a\x6f\x6f\x6d'
+        self.req_bin_2 = b'\x12\x02\x00\x07' b'\x11\x10\xf6\x2e' \
+            b'\x3c\x30\xf5\x5a' b'\x5c\x3c\x53\x74' \
+            b'\x08\x00\x00\x00' b'\x00\x00\x00\x04' \
+            b'\x7a\x6f\x6f\x6d'
 
         self.req_args_3 = {
             'mode': 0,
@@ -771,9 +779,9 @@ class TestChangeProperty(unittest.TestCase):
             'window': 1964921608,
             'type': 692879036,
             }
-        self.req_bin_3 = '\x12\x00\x00\x06' '\x75\x1e\x53\x08' \
-            '\x19\x73\x3e\xc0' '\x29\x4c\x7e\xbc' \
-            '\x10\x00\x00\x00' '\x00\x00\x00\x00'
+        self.req_bin_3 = b'\x12\x00\x00\x06' b'\x75\x1e\x53\x08' \
+            b'\x19\x73\x3e\xc0' b'\x29\x4c\x7e\xbc' \
+            b'\x10\x00\x00\x00' b'\x00\x00\x00\x00'
 
         self.req_args_4 = {
             'mode': 0,
@@ -782,10 +790,10 @@ class TestChangeProperty(unittest.TestCase):
             'window': 560040176,
             'type': 2030208993,
             }
-        self.req_bin_4 = '\x12\x00\x00\x08' '\x21\x61\x88\xf0' \
-            '\x2f\xbe\x64\xa4' '\x79\x02\x87\xe1' \
-            '\x10\x00\x00\x00' '\x00\x00\x00\x03' \
-            '\x00\x01\x00\x02' '\x00\x03\x00\x00'
+        self.req_bin_4 = b'\x12\x00\x00\x08' b'\x21\x61\x88\xf0' \
+            b'\x2f\xbe\x64\xa4' b'\x79\x02\x87\xe1' \
+            b'\x10\x00\x00\x00' b'\x00\x00\x00\x03' \
+            b'\x00\x01\x00\x02' b'\x00\x03\x00\x00'
 
         self.req_args_5 = {
             'mode': 0,
@@ -794,10 +802,10 @@ class TestChangeProperty(unittest.TestCase):
             'window': 2016421454,
             'type': 434059096,
             }
-        self.req_bin_5 = '\x12\x00\x00\x08' '\x78\x30\x26\x4e' \
-            '\x53\x8c\x0f\x22' '\x19\xdf\x37\x58' \
-            '\x10\x00\x00\x00' '\x00\x00\x00\x04' \
-            '\x00\x01\x00\x02' '\x00\x03\x00\x04'
+        self.req_bin_5 = b'\x12\x00\x00\x08' b'\x78\x30\x26\x4e' \
+            b'\x53\x8c\x0f\x22' b'\x19\xdf\x37\x58' \
+            b'\x10\x00\x00\x00' b'\x00\x00\x00\x04' \
+            b'\x00\x01\x00\x02' b'\x00\x03\x00\x04'
 
         self.req_args_6 = {
             'mode': 2,
@@ -806,9 +814,9 @@ class TestChangeProperty(unittest.TestCase):
             'window': 461926013,
             'type': 613217208,
             }
-        self.req_bin_6 = '\x12\x02\x00\x06' '\x1b\x88\x6e\x7d' \
-            '\x3c\x23\x1c\xbb' '\x24\x8c\xf3\xb8' \
-            '\x20\x00\x00\x00' '\x00\x00\x00\x00'
+        self.req_bin_6 = b'\x12\x02\x00\x06' b'\x1b\x88\x6e\x7d' \
+            b'\x3c\x23\x1c\xbb' b'\x24\x8c\xf3\xb8' \
+            b'\x20\x00\x00\x00' b'\x00\x00\x00\x00'
 
         self.req_args_7 = {
             'mode': 1,
@@ -817,15 +825,15 @@ class TestChangeProperty(unittest.TestCase):
             'window': 367636986,
             'type': 1085552939,
             }
-        self.req_bin_7 = '\x12\x01\x00\x09' '\x15\xe9\xb1\xfa' \
-            '\x57\xc4\x9f\x58' '\x40\xb4\x39\x2b' \
-            '\x20\x00\x00\x00' '\x00\x00\x00\x03' \
-            '\x00\x00\x00\x01' '\x00\x00\x00\x02' \
-            '\x00\x00\x00\x03'
+        self.req_bin_7 = b'\x12\x01\x00\x09' b'\x15\xe9\xb1\xfa' \
+            b'\x57\xc4\x9f\x58' b'\x40\xb4\x39\x2b' \
+            b'\x20\x00\x00\x00' b'\x00\x00\x00\x03' \
+            b'\x00\x00\x00\x01' b'\x00\x00\x00\x02' \
+            b'\x00\x00\x00\x03'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -843,7 +851,7 @@ class TestChangeProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest1(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_1)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_1)
         try:
             assert bin == self.req_bin_1
         except AssertionError:
@@ -861,7 +869,7 @@ class TestChangeProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest2(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_2)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_2)
         try:
             assert bin == self.req_bin_2
         except AssertionError:
@@ -879,7 +887,7 @@ class TestChangeProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest3(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_3)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_3)
         try:
             assert bin == self.req_bin_3
         except AssertionError:
@@ -897,7 +905,7 @@ class TestChangeProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest4(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_4)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_4)
         try:
             assert bin == self.req_bin_4
         except AssertionError:
@@ -915,7 +923,7 @@ class TestChangeProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest5(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_5)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_5)
         try:
             assert bin == self.req_bin_5
         except AssertionError:
@@ -933,7 +941,7 @@ class TestChangeProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest6(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_6)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_6)
         try:
             assert bin == self.req_bin_6
         except AssertionError:
@@ -951,7 +959,7 @@ class TestChangeProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest7(self):
-        bin = apply(request.ChangeProperty._request.to_binary, (), self.req_args_7)
+        bin = request.ChangeProperty._request.to_binary(*(), **self.req_args_7)
         try:
             assert bin == self.req_bin_7
         except AssertionError:
@@ -975,12 +983,12 @@ class TestDeleteProperty(unittest.TestCase):
             'property': 506897017,
             'window': 381870530,
             }
-        self.req_bin_0 = '\x13\x00\x00\x03' '\x16\xc2\xe1\xc2' \
-            '\x1e\x36\xa2\x79'
+        self.req_bin_0 = b'\x13\x00\x00\x03' b'\x16\xc2\xe1\xc2' \
+            b'\x1e\x36\xa2\x79'
 
 
     def testPackRequest0(self):
-        bin = apply(request.DeleteProperty._request.to_binary, (), self.req_args_0)
+        bin = request.DeleteProperty._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1008,9 +1016,9 @@ class TestGetProperty(unittest.TestCase):
             'window': 1477792536,
             'long_length': 1346507413,
             }
-        self.req_bin_0 = '\x14\x00\x00\x06' '\x58\x15\x53\x18' \
-            '\x3c\x11\x6b\x13' '\x5c\xc5\x9b\xa0' \
-            '\x5d\x30\x8c\xce' '\x50\x42\x12\x95'
+        self.req_bin_0 = b'\x14\x00\x00\x06' b'\x58\x15\x53\x18' \
+            b'\x3c\x11\x6b\x13' b'\x5c\xc5\x9b\xa0' \
+            b'\x5d\x30\x8c\xce' b'\x50\x42\x12\x95'
 
         self.reply_args_0 = {
             'value': (8, ''),
@@ -1018,10 +1026,10 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 1392423916,
             'bytes_after': 2046056935,
             }
-        self.reply_bin_0 = '\x01\x08\x77\x8e' '\x00\x00\x00\x00' \
-            '\x52\xfe\xb3\xec' '\x79\xf4\x59\xe7' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x08\x77\x8e' b'\x00\x00\x00\x00' \
+            b'\x52\xfe\xb3\xec' b'\x79\xf4\x59\xe7' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
         self.reply_args_1 = {
             'value': (8, 'foo'),
@@ -1029,11 +1037,11 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 186441230,
             'bytes_after': 469299413,
             }
-        self.reply_bin_1 = '\x01\x08\xac\xf7' '\x00\x00\x00\x01' \
-            '\x0b\x1c\xde\x0e' '\x1b\xf8\xf0\xd5' \
-            '\x00\x00\x00\x03' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x66\x6f\x6f\x00'
+        self.reply_bin_1 = b'\x01\x08\xac\xf7' b'\x00\x00\x00\x01' \
+            b'\x0b\x1c\xde\x0e' b'\x1b\xf8\xf0\xd5' \
+            b'\x00\x00\x00\x03' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x66\x6f\x6f\x00'
 
         self.reply_args_2 = {
             'value': (8, 'zoom'),
@@ -1041,11 +1049,11 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 1802804296,
             'bytes_after': 1968158856,
             }
-        self.reply_bin_2 = '\x01\x08\x31\x82' '\x00\x00\x00\x01' \
-            '\x6b\x74\x9c\x48' '\x75\x4f\xb8\x88' \
-            '\x00\x00\x00\x04' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x7a\x6f\x6f\x6d'
+        self.reply_bin_2 = b'\x01\x08\x31\x82' b'\x00\x00\x00\x01' \
+            b'\x6b\x74\x9c\x48' b'\x75\x4f\xb8\x88' \
+            b'\x00\x00\x00\x04' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x7a\x6f\x6f\x6d'
 
         self.reply_args_3 = {
             'value': (16, []),
@@ -1053,10 +1061,10 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 536196393,
             'bytes_after': 1874157309,
             }
-        self.reply_bin_3 = '\x01\x10\x62\xdf' '\x00\x00\x00\x00' \
-            '\x1f\xf5\xb5\x29' '\x6f\xb5\x5e\xfd' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_3 = b'\x01\x10\x62\xdf' b'\x00\x00\x00\x00' \
+            b'\x1f\xf5\xb5\x29' b'\x6f\xb5\x5e\xfd' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
         self.reply_args_4 = {
             'value': (16, [1, 2, 3]),
@@ -1064,11 +1072,11 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 1046879880,
             'bytes_after': 1952710167,
             }
-        self.reply_bin_4 = '\x01\x10\x58\x89' '\x00\x00\x00\x02' \
-            '\x3e\x66\x1e\x88' '\x74\x63\xfe\x17' \
-            '\x00\x00\x00\x03' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x01\x00\x02' '\x00\x03\x00\x00'
+        self.reply_bin_4 = b'\x01\x10\x58\x89' b'\x00\x00\x00\x02' \
+            b'\x3e\x66\x1e\x88' b'\x74\x63\xfe\x17' \
+            b'\x00\x00\x00\x03' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x01\x00\x02' b'\x00\x03\x00\x00'
 
         self.reply_args_5 = {
             'value': (16, [1, 2, 3, 4]),
@@ -1076,11 +1084,11 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 1014173132,
             'bytes_after': 1791090668,
             }
-        self.reply_bin_5 = '\x01\x10\x4a\x54' '\x00\x00\x00\x02' \
-            '\x3c\x73\x0d\xcc' '\x6a\xc1\xdf\xec' \
-            '\x00\x00\x00\x04' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x01\x00\x02' '\x00\x03\x00\x04'
+        self.reply_bin_5 = b'\x01\x10\x4a\x54' b'\x00\x00\x00\x02' \
+            b'\x3c\x73\x0d\xcc' b'\x6a\xc1\xdf\xec' \
+            b'\x00\x00\x00\x04' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x01\x00\x02' b'\x00\x03\x00\x04'
 
         self.reply_args_6 = {
             'value': (32, []),
@@ -1088,10 +1096,10 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 2053870497,
             'bytes_after': 1727548898,
             }
-        self.reply_bin_6 = '\x01\x20\xb8\x7a' '\x00\x00\x00\x00' \
-            '\x7a\x6b\x93\xa1' '\x66\xf8\x4d\xe2' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_6 = b'\x01\x20\xb8\x7a' b'\x00\x00\x00\x00' \
+            b'\x7a\x6b\x93\xa1' b'\x66\xf8\x4d\xe2' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
         self.reply_args_7 = {
             'value': (32, [1, 2, 3]),
@@ -1099,16 +1107,16 @@ class TestGetProperty(unittest.TestCase):
             'property_type': 704363625,
             'bytes_after': 1957409055,
             }
-        self.reply_bin_7 = '\x01\x20\x90\xe6' '\x00\x00\x00\x03' \
-            '\x29\xfb\xbc\x69' '\x74\xab\xb1\x1f' \
-            '\x00\x00\x00\x03' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x01' '\x00\x00\x00\x02' \
-            '\x00\x00\x00\x03'
+        self.reply_bin_7 = b'\x01\x20\x90\xe6' b'\x00\x00\x00\x03' \
+            b'\x29\xfb\xbc\x69' b'\x74\xab\xb1\x1f' \
+            b'\x00\x00\x00\x03' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x01' b'\x00\x00\x00\x02' \
+            b'\x00\x00\x00\x03'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetProperty._request.to_binary, (), self.req_args_0)
+        bin = request.GetProperty._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1126,7 +1134,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -1144,7 +1152,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply1(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_1)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_1)
         try:
             assert bin == self.reply_bin_1
         except AssertionError:
@@ -1162,7 +1170,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply2(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_2)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_2)
         try:
             assert bin == self.reply_bin_2
         except AssertionError:
@@ -1180,7 +1188,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply3(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_3)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_3)
         try:
             assert bin == self.reply_bin_3
         except AssertionError:
@@ -1198,7 +1206,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply4(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_4)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_4)
         try:
             assert bin == self.reply_bin_4
         except AssertionError:
@@ -1216,7 +1224,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply5(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_5)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_5)
         try:
             assert bin == self.reply_bin_5
         except AssertionError:
@@ -1234,7 +1242,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply6(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_6)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_6)
         try:
             assert bin == self.reply_bin_6
         except AssertionError:
@@ -1252,7 +1260,7 @@ class TestGetProperty(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply7(self):
-        bin = apply(request.GetProperty._reply.to_binary, (), self.reply_args_7)
+        bin = request.GetProperty._reply.to_binary(*(), **self.reply_args_7)
         try:
             assert bin == self.reply_bin_7
         except AssertionError:
@@ -1275,32 +1283,32 @@ class TestListProperties(unittest.TestCase):
         self.req_args_0 = {
             'window': 91262675,
             }
-        self.req_bin_0 = '\x15\x00\x00\x02' '\x05\x70\x8e\xd3'
+        self.req_bin_0 = b'\x15\x00\x00\x02' b'\x05\x70\x8e\xd3'
 
         self.reply_args_0 = {
             'atoms': [580972634, 926488735, 714741529, 408777797, 679906858, 705092899, 2063243279, 893967755, 1591182471, 571137996, 1677110101, 1783836762, 1678219148, 1992402577, 871298793, 1182885899, 1155013854, 1822076326, 2117552706, 1972668469, 1660227078, 1523268962, 694042433],
             'sequence_number': 42191,
             }
-        self.reply_bin_0 = '\x01\x00\xa4\xcf' '\x00\x00\x00\x17' \
-            '\x00\x17\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x22\xa0\xf0\x5a' '\x37\x39\x18\x9f' \
-            '\x2a\x9a\x17\x19' '\x18\x5d\x74\x45' \
-            '\x28\x86\x8e\x2a' '\x2a\x06\xdd\x23' \
-            '\x7a\xfa\x98\x0f' '\x35\x48\xdd\x8b' \
-            '\x5e\xd7\x84\x87' '\x22\x0a\xdf\xcc' \
-            '\x63\xf6\xab\x55' '\x6a\x53\x30\x5a' \
-            '\x64\x07\x97\x8c' '\x76\xc1\xa6\x91' \
-            '\x33\xee\xf6\xe9' '\x46\x81\x68\x0b' \
-            '\x44\xd8\x1c\xde' '\x6c\x9a\xad\xa6' \
-            '\x7e\x37\x4a\x42' '\x75\x94\x88\x35' \
-            '\x62\xf5\x0e\x06' '\x5a\xcb\x3d\x62' \
-            '\x29\x5e\x3f\x41'
+        self.reply_bin_0 = b'\x01\x00\xa4\xcf' b'\x00\x00\x00\x17' \
+            b'\x00\x17\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x22\xa0\xf0\x5a' b'\x37\x39\x18\x9f' \
+            b'\x2a\x9a\x17\x19' b'\x18\x5d\x74\x45' \
+            b'\x28\x86\x8e\x2a' b'\x2a\x06\xdd\x23' \
+            b'\x7a\xfa\x98\x0f' b'\x35\x48\xdd\x8b' \
+            b'\x5e\xd7\x84\x87' b'\x22\x0a\xdf\xcc' \
+            b'\x63\xf6\xab\x55' b'\x6a\x53\x30\x5a' \
+            b'\x64\x07\x97\x8c' b'\x76\xc1\xa6\x91' \
+            b'\x33\xee\xf6\xe9' b'\x46\x81\x68\x0b' \
+            b'\x44\xd8\x1c\xde' b'\x6c\x9a\xad\xa6' \
+            b'\x7e\x37\x4a\x42' b'\x75\x94\x88\x35' \
+            b'\x62\xf5\x0e\x06' b'\x5a\xcb\x3d\x62' \
+            b'\x29\x5e\x3f\x41'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ListProperties._request.to_binary, (), self.req_args_0)
+        bin = request.ListProperties._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1318,7 +1326,7 @@ class TestListProperties(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.ListProperties._reply.to_binary, (), self.reply_args_0)
+        bin = request.ListProperties._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -1343,12 +1351,12 @@ class TestSetSelectionOwner(unittest.TestCase):
             'window': 1190911777,
             'time': 1606660593,
             }
-        self.req_bin_0 = '\x16\x00\x00\x04' '\x46\xfb\xdf\x21' \
-            '\x7b\x74\xe4\x1b' '\x5f\xc3\xb1\xf1'
+        self.req_bin_0 = b'\x16\x00\x00\x04' b'\x46\xfb\xdf\x21' \
+            b'\x7b\x74\xe4\x1b' b'\x5f\xc3\xb1\xf1'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetSelectionOwner._request.to_binary, (), self.req_args_0)
+        bin = request.SetSelectionOwner._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1371,20 +1379,20 @@ class TestGetSelectionOwner(unittest.TestCase):
         self.req_args_0 = {
             'selection': 819576555,
             }
-        self.req_bin_0 = '\x17\x00\x00\x02' '\x30\xd9\xbe\xeb'
+        self.req_bin_0 = b'\x17\x00\x00\x02' b'\x30\xd9\xbe\xeb'
 
         self.reply_args_0 = {
             'sequence_number': 14152,
             'owner': 1922331178,
             }
-        self.reply_bin_0 = '\x01\x00\x37\x48' '\x00\x00\x00\x00' \
-            '\x72\x94\x72\x2a' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x37\x48' b'\x00\x00\x00\x00' \
+            b'\x72\x94\x72\x2a' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetSelectionOwner._request.to_binary, (), self.req_args_0)
+        bin = request.GetSelectionOwner._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1402,7 +1410,7 @@ class TestGetSelectionOwner(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetSelectionOwner._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetSelectionOwner._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -1429,13 +1437,13 @@ class TestConvertSelection(unittest.TestCase):
             'selection': 125139929,
             'requestor': 300355135,
             }
-        self.req_bin_0 = '\x18\x00\x00\x06' '\x11\xe7\x0e\x3f' \
-            '\x07\x75\x7b\xd9' '\x75\x8e\x82\x08' \
-            '\x7f\x6c\x1d\xb7' '\x5f\x0c\x79\xd6'
+        self.req_bin_0 = b'\x18\x00\x00\x06' b'\x11\xe7\x0e\x3f' \
+            b'\x07\x75\x7b\xd9' b'\x75\x8e\x82\x08' \
+            b'\x7f\x6c\x1d\xb7' b'\x5f\x0c\x79\xd6'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ConvertSelection._request.to_binary, (), self.req_args_0)
+        bin = request.ConvertSelection._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1461,16 +1469,16 @@ class TestSendEvent(unittest.TestCase):
             'destination': 1369243800,
             'event_mask': 1594482936,
             }
-        self.req_bin_0 = '\x19\x01\x00\x0b' '\x51\x9d\x00\x98' \
-            '\x5f\x09\xe0\xf8' '\x0c\x00\x00\x00' \
-            '\x4e\xce\xfa\x94' '\xcd\x42\xdb\xfc' \
-            '\x40\xe4\xfd\x10' '\x37\x54\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00'
+        self.req_bin_0 = b'\x19\x01\x00\x0b' b'\x51\x9d\x00\x98' \
+            b'\x5f\x09\xe0\xf8' b'\x0c\x00\x00\x00' \
+            b'\x4e\xce\xfa\x94' b'\xcd\x42\xdb\xfc' \
+            b'\x40\xe4\xfd\x10' b'\x37\x54\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SendEvent._request.to_binary, (), self.req_args_0)
+        bin = request.SendEvent._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1500,22 +1508,22 @@ class TestGrabPointer(unittest.TestCase):
             'keyboard_mode': 1,
             'cursor': 17101598,
             }
-        self.req_bin_0 = '\x1a\x01\x00\x06' '\x7d\x75\x91\xbc' \
-            '\x08\x1b\x00\x01' '\x76\x82\xb9\x57' \
-            '\x01\x04\xf3\x1e' '\x4e\x77\x17\xcc'
+        self.req_bin_0 = b'\x1a\x01\x00\x06' b'\x7d\x75\x91\xbc' \
+            b'\x08\x1b\x00\x01' b'\x76\x82\xb9\x57' \
+            b'\x01\x04\xf3\x1e' b'\x4e\x77\x17\xcc'
 
         self.reply_args_0 = {
             'sequence_number': 47539,
             'status': 149,
             }
-        self.reply_bin_0 = '\x01\x95\xb9\xb3' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x95\xb9\xb3' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GrabPointer._request.to_binary, (), self.req_args_0)
+        bin = request.GrabPointer._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1533,7 +1541,7 @@ class TestGrabPointer(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GrabPointer._reply.to_binary, (), self.reply_args_0)
+        bin = request.GrabPointer._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -1556,11 +1564,11 @@ class TestUngrabPointer(unittest.TestCase):
         self.req_args_0 = {
             'time': 209008422,
             }
-        self.req_bin_0 = '\x1b\x00\x00\x02' '\x0c\x75\x37\x26'
+        self.req_bin_0 = b'\x1b\x00\x00\x02' b'\x0c\x75\x37\x26'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UngrabPointer._request.to_binary, (), self.req_args_0)
+        bin = request.UngrabPointer._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1591,13 +1599,13 @@ class TestGrabButton(unittest.TestCase):
             'keyboard_mode': 1,
             'cursor': 1070323643,
             }
-        self.req_bin_0 = '\x1c\x01\x00\x06' '\x1f\x60\x42\x88' \
-            '\x3f\x97\x01\x01' '\x6d\xe8\x6c\x5b' \
-            '\x3f\xcb\xd7\xbb' '\xd0\x00\x3c\xe5'
+        self.req_bin_0 = b'\x1c\x01\x00\x06' b'\x1f\x60\x42\x88' \
+            b'\x3f\x97\x01\x01' b'\x6d\xe8\x6c\x5b' \
+            b'\x3f\xcb\xd7\xbb' b'\xd0\x00\x3c\xe5'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GrabButton._request.to_binary, (), self.req_args_0)
+        bin = request.GrabButton._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1622,12 +1630,12 @@ class TestUngrabButton(unittest.TestCase):
             'button': 240,
             'modifiers': 51717,
             }
-        self.req_bin_0 = '\x1d\xf0\x00\x03' '\x2f\x69\x0e\x86' \
-            '\xca\x05\x00\x00'
+        self.req_bin_0 = b'\x1d\xf0\x00\x03' b'\x2f\x69\x0e\x86' \
+            b'\xca\x05\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UngrabButton._request.to_binary, (), self.req_args_0)
+        bin = request.UngrabButton._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1652,12 +1660,12 @@ class TestChangeActivePointerGrab(unittest.TestCase):
             'event_mask': 23423,
             'cursor': 1696594928,
             }
-        self.req_bin_0 = '\x1e\x00\x00\x04' '\x65\x1f\xfb\xf0' \
-            '\x35\x20\xbb\x64' '\x5b\x7f\x00\x00'
+        self.req_bin_0 = b'\x1e\x00\x00\x04' b'\x65\x1f\xfb\xf0' \
+            b'\x35\x20\xbb\x64' b'\x5b\x7f\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeActivePointerGrab._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeActivePointerGrab._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1684,21 +1692,21 @@ class TestGrabKeyboard(unittest.TestCase):
             'pointer_mode': 1,
             'keyboard_mode': 1,
             }
-        self.req_bin_0 = '\x1f\x00\x00\x04' '\x04\x89\xaf\x67' \
-            '\x5d\x23\x78\xd9' '\x01\x01\x00\x00'
+        self.req_bin_0 = b'\x1f\x00\x00\x04' b'\x04\x89\xaf\x67' \
+            b'\x5d\x23\x78\xd9' b'\x01\x01\x00\x00'
 
         self.reply_args_0 = {
             'sequence_number': 9648,
             'status': 129,
             }
-        self.reply_bin_0 = '\x01\x81\x25\xb0' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x81\x25\xb0' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GrabKeyboard._request.to_binary, (), self.req_args_0)
+        bin = request.GrabKeyboard._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1716,7 +1724,7 @@ class TestGrabKeyboard(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GrabKeyboard._reply.to_binary, (), self.reply_args_0)
+        bin = request.GrabKeyboard._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -1739,11 +1747,11 @@ class TestUngrabKeyboard(unittest.TestCase):
         self.req_args_0 = {
             'time': 1352311886,
             }
-        self.req_bin_0 = '\x20\x00\x00\x02' '\x50\x9a\xa4\x4e'
+        self.req_bin_0 = b'\x20\x00\x00\x02' b'\x50\x9a\xa4\x4e'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UngrabKeyboard._request.to_binary, (), self.req_args_0)
+        bin = request.UngrabKeyboard._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1771,12 +1779,12 @@ class TestGrabKey(unittest.TestCase):
             'modifiers': 28819,
             'key': 193,
             }
-        self.req_bin_0 = '\x21\x01\x00\x04' '\x57\x78\x21\xf0' \
-            '\x70\x93\xc1\x00' '\x00\x00\x00\x00'
+        self.req_bin_0 = b'\x21\x01\x00\x04' b'\x57\x78\x21\xf0' \
+            b'\x70\x93\xc1\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GrabKey._request.to_binary, (), self.req_args_0)
+        bin = request.GrabKey._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1801,12 +1809,12 @@ class TestUngrabKey(unittest.TestCase):
             'key': 215,
             'modifiers': 60588,
             }
-        self.req_bin_0 = '\x22\xd7\x00\x03' '\x2d\xe4\x31\xbb' \
-            '\xec\xac\x00\x00'
+        self.req_bin_0 = b'\x22\xd7\x00\x03' b'\x2d\xe4\x31\xbb' \
+            b'\xec\xac\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UngrabKey._request.to_binary, (), self.req_args_0)
+        bin = request.UngrabKey._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1830,11 +1838,11 @@ class TestAllowEvents(unittest.TestCase):
             'time': 342147129,
             'mode': 1,
             }
-        self.req_bin_0 = '\x23\x01\x00\x02' '\x14\x64\xc0\x39'
+        self.req_bin_0 = b'\x23\x01\x00\x02' b'\x14\x64\xc0\x39'
 
 
     def testPackRequest0(self):
-        bin = apply(request.AllowEvents._request.to_binary, (), self.req_args_0)
+        bin = request.AllowEvents._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1856,11 +1864,11 @@ class TestGrabServer(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x24\x00\x00\x01'
+        self.req_bin_0 = b'\x24\x00\x00\x01'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GrabServer._request.to_binary, (), self.req_args_0)
+        bin = request.GrabServer._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1882,11 +1890,11 @@ class TestUngrabServer(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x25\x00\x00\x01'
+        self.req_bin_0 = b'\x25\x00\x00\x01'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UngrabServer._request.to_binary, (), self.req_args_0)
+        bin = request.UngrabServer._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1909,7 +1917,7 @@ class TestQueryPointer(unittest.TestCase):
         self.req_args_0 = {
             'window': 561336799,
             }
-        self.req_bin_0 = '\x26\x00\x00\x02' '\x21\x75\x51\xdf'
+        self.req_bin_0 = b'\x26\x00\x00\x02' b'\x21\x75\x51\xdf'
 
         self.reply_args_0 = {
             'win_y': -25733,
@@ -1922,14 +1930,14 @@ class TestQueryPointer(unittest.TestCase):
             'child': 1075058918,
             'win_x': -18858,
             }
-        self.reply_bin_0 = '\x01\x00\xa1\xe8' '\x00\x00\x00\x00' \
-            '\x5f\x52\x73\x56' '\x40\x14\x18\xe6' \
-            '\xef\xa7\xe8\x20' '\xb6\x56\x9b\x7b' \
-            '\x8c\x73\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\xa1\xe8' b'\x00\x00\x00\x00' \
+            b'\x5f\x52\x73\x56' b'\x40\x14\x18\xe6' \
+            b'\xef\xa7\xe8\x20' b'\xb6\x56\x9b\x7b' \
+            b'\x8c\x73\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryPointer._request.to_binary, (), self.req_args_0)
+        bin = request.QueryPointer._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -1947,7 +1955,7 @@ class TestQueryPointer(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryPointer._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryPointer._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -1972,26 +1980,26 @@ class TestGetMotionEvents(unittest.TestCase):
             'start': 1520150500,
             'stop': 11115313,
             }
-        self.req_bin_0 = '\x27\x00\x00\x04' '\x32\x49\x8f\xf4' \
-            '\x5a\x9b\xa7\xe4' '\x00\xa9\x9b\x31'
+        self.req_bin_0 = b'\x27\x00\x00\x04' b'\x32\x49\x8f\xf4' \
+            b'\x5a\x9b\xa7\xe4' b'\x00\xa9\x9b\x31'
 
         self.reply_args_0 = {
             'sequence_number': 52222,
             'events': [{'time': 2107444516, 'x': -649, 'y': -11631}, {'time': 1827536960, 'x': -18061, 'y': -2301}, {'time': 554175146, 'x': -32111, 'y': -13522}, {'time': 608168588, 'x': -5963, 'y': -24618}, {'time': 590416221, 'x': -3325, 'y': -19656}],
             }
-        self.reply_bin_0 = '\x01\x00\xcb\xfe' '\x00\x00\x00\x0a' \
-            '\x00\x00\x00\x05' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x7d\x9d\x0d\x24' '\xfd\x77\xd2\x91' \
-            '\x6c\xee\x00\x40' '\xb9\x73\xf7\x03' \
-            '\x21\x08\x0a\xaa' '\x82\x91\xcb\x2e' \
-            '\x24\x3f\xea\x8c' '\xe8\xb5\x9f\xd6' \
-            '\x23\x31\x09\x5d' '\xf3\x03\xb3\x38'
+        self.reply_bin_0 = b'\x01\x00\xcb\xfe' b'\x00\x00\x00\x0a' \
+            b'\x00\x00\x00\x05' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x7d\x9d\x0d\x24' b'\xfd\x77\xd2\x91' \
+            b'\x6c\xee\x00\x40' b'\xb9\x73\xf7\x03' \
+            b'\x21\x08\x0a\xaa' b'\x82\x91\xcb\x2e' \
+            b'\x24\x3f\xea\x8c' b'\xe8\xb5\x9f\xd6' \
+            b'\x23\x31\x09\x5d' b'\xf3\x03\xb3\x38'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetMotionEvents._request.to_binary, (), self.req_args_0)
+        bin = request.GetMotionEvents._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2009,7 +2017,7 @@ class TestGetMotionEvents(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetMotionEvents._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetMotionEvents._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2035,8 +2043,8 @@ class TestTranslateCoords(unittest.TestCase):
             'src_wid': 257619448,
             'dst_wid': 1238981863,
             }
-        self.req_bin_0 = '\x28\x00\x00\x04' '\x0f\x5a\xf5\xf8' \
-            '\x49\xd9\x5c\xe7' '\x9d\x0d\x95\x91'
+        self.req_bin_0 = b'\x28\x00\x00\x04' b'\x0f\x5a\xf5\xf8' \
+            b'\x49\xd9\x5c\xe7' b'\x9d\x0d\x95\x91'
 
         self.reply_args_0 = {
             'child': 2050350678,
@@ -2045,14 +2053,14 @@ class TestTranslateCoords(unittest.TestCase):
             'x': -18096,
             'y': -5252,
             }
-        self.reply_bin_0 = '\x01\x01\x97\x01' '\x00\x00\x00\x00' \
-            '\x7a\x35\xde\x56' '\xb9\x50\xeb\x7c' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x01\x97\x01' b'\x00\x00\x00\x00' \
+            b'\x7a\x35\xde\x56' b'\xb9\x50\xeb\x7c' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.TranslateCoords._request.to_binary, (), self.req_args_0)
+        bin = request.TranslateCoords._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2070,7 +2078,7 @@ class TestTranslateCoords(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.TranslateCoords._reply.to_binary, (), self.reply_args_0)
+        bin = request.TranslateCoords._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2100,13 +2108,13 @@ class TestWarpPointer(unittest.TestCase):
             'dst_x': -30516,
             'dst_y': -24204,
             }
-        self.req_bin_0 = '\x29\x00\x00\x06' '\x4f\x93\xba\xef' \
-            '\x28\x44\x07\xf4' '\x96\x11\x9a\x29' \
-            '\x55\x31\xdd\x3a' '\x88\xcc\xa1\x74'
+        self.req_bin_0 = b'\x29\x00\x00\x06' b'\x4f\x93\xba\xef' \
+            b'\x28\x44\x07\xf4' b'\x96\x11\x9a\x29' \
+            b'\x55\x31\xdd\x3a' b'\x88\xcc\xa1\x74'
 
 
     def testPackRequest0(self):
-        bin = apply(request.WarpPointer._request.to_binary, (), self.req_args_0)
+        bin = request.WarpPointer._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2131,12 +2139,12 @@ class TestSetInputFocus(unittest.TestCase):
             'time': 1079702500,
             'focus': 1026400247,
             }
-        self.req_bin_0 = '\x2a\x01\x00\x03' '\x3d\x2d\x9f\xf7' \
-            '\x40\x5a\xf3\xe4'
+        self.req_bin_0 = b'\x2a\x01\x00\x03' b'\x3d\x2d\x9f\xf7' \
+            b'\x40\x5a\xf3\xe4'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetInputFocus._request.to_binary, (), self.req_args_0)
+        bin = request.SetInputFocus._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2158,21 +2166,21 @@ class TestGetInputFocus(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x2b\x00\x00\x01'
+        self.req_bin_0 = b'\x2b\x00\x00\x01'
 
         self.reply_args_0 = {
             'revert_to': 152,
             'sequence_number': 16002,
             'focus': 2024022965,
             }
-        self.reply_bin_0 = '\x01\x98\x3e\x82' '\x00\x00\x00\x00' \
-            '\x78\xa4\x23\xb5' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x98\x3e\x82' b'\x00\x00\x00\x00' \
+            b'\x78\xa4\x23\xb5' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetInputFocus._request.to_binary, (), self.req_args_0)
+        bin = request.GetInputFocus._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2190,7 +2198,7 @@ class TestGetInputFocus(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetInputFocus._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetInputFocus._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2212,21 +2220,21 @@ class TestQueryKeymap(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x2c\x00\x00\x01'
+        self.req_bin_0 = b'\x2c\x00\x00\x01'
 
         self.reply_args_0 = {
             'sequence_number': 16233,
             'map': [186, 167, 191, 213, 241, 231, 234, 175, 154, 169, 132, 146, 215, 191, 196, 212, 158, 156, 177, 233, 220, 192, 130, 226, 181, 233, 238, 141, 129, 215, 245, 215],
             }
-        self.reply_bin_0 = '\x01\x00\x3f\x69' '\x00\x00\x00\x02' \
-            '\xba\xa7\xbf\xd5' '\xf1\xe7\xea\xaf' \
-            '\x9a\xa9\x84\x92' '\xd7\xbf\xc4\xd4' \
-            '\x9e\x9c\xb1\xe9' '\xdc\xc0\x82\xe2' \
-            '\xb5\xe9\xee\x8d' '\x81\xd7\xf5\xd7'
+        self.reply_bin_0 = b'\x01\x00\x3f\x69' b'\x00\x00\x00\x02' \
+            b'\xba\xa7\xbf\xd5' b'\xf1\xe7\xea\xaf' \
+            b'\x9a\xa9\x84\x92' b'\xd7\xbf\xc4\xd4' \
+            b'\x9e\x9c\xb1\xe9' b'\xdc\xc0\x82\xe2' \
+            b'\xb5\xe9\xee\x8d' b'\x81\xd7\xf5\xd7'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryKeymap._request.to_binary, (), self.req_args_0)
+        bin = request.QueryKeymap._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2244,7 +2252,7 @@ class TestQueryKeymap(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryKeymap._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryKeymap._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2268,13 +2276,13 @@ class TestOpenFont(unittest.TestCase):
             'fid': 1728036313,
             'name': 'foofont',
             }
-        self.req_bin_0 = '\x2d\x00\x00\x05' '\x66\xff\xbd\xd9' \
-            '\x00\x07\x00\x00' '\x66\x6f\x6f\x66' \
-            '\x6f\x6e\x74\x00'
+        self.req_bin_0 = b'\x2d\x00\x00\x05' b'\x66\xff\xbd\xd9' \
+            b'\x00\x07\x00\x00' b'\x66\x6f\x6f\x66' \
+            b'\x6f\x6e\x74\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.OpenFont._request.to_binary, (), self.req_args_0)
+        bin = request.OpenFont._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2297,11 +2305,11 @@ class TestCloseFont(unittest.TestCase):
         self.req_args_0 = {
             'font': 1139770507,
             }
-        self.req_bin_0 = '\x2e\x00\x00\x02' '\x43\xef\x84\x8b'
+        self.req_bin_0 = b'\x2e\x00\x00\x02' b'\x43\xef\x84\x8b'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CloseFont._request.to_binary, (), self.req_args_0)
+        bin = request.CloseFont._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2324,7 +2332,7 @@ class TestQueryFont(unittest.TestCase):
         self.req_args_0 = {
             'font': 1867659050,
             }
-        self.req_bin_0 = '\x2f\x00\x00\x02' '\x6f\x52\x37\x2a'
+        self.req_bin_0 = b'\x2f\x00\x00\x02' b'\x6f\x52\x37\x2a'
 
         self.reply_args_0 = {
             'sequence_number': 8877,
@@ -2342,23 +2350,23 @@ class TestQueryFont(unittest.TestCase):
             'font_descent': -23067,
             'max_bounds': {'descent': -24292, 'ascent': -26972, 'character_width': -19286, 'left_side_bearing': -16363, 'right_side_bearing': -3149, 'attributes': 35968},
             }
-        self.reply_bin_0 = '\x01\x00\x22\xad' '\x00\x00\x00\x12' \
-            '\xae\xfc\xab\x3e' '\xeb\x5a\x96\x67' \
-            '\x8b\x8b\x2c\x80' '\x00\x00\x00\x00' \
-            '\xc0\x15\xf3\xb3' '\xb4\xaa\x96\xa4' \
-            '\xa1\x1c\x8c\x80' '\x00\x00\x00\x00' \
-            '\xc0\xd0\x09\xd4' '\x23\x22\x00\x01' \
-            '\x8f\xbe\xa8\x01' '\xc2\xe2\xa5\xe5' \
-            '\x00\x00\x00\x03' '\x56\x76\x30\xf3' \
-            '\x7d\xc9\x5e\x19' '\xee\x57\xd9\x6d' \
-            '\x90\x97\xc7\x8a' '\xfe\xb5\xd7\x97' \
-            '\xb0\x53\x9d\x9d' '\xee\x4c\xe7\x7a' \
-            '\xb6\xcd\x73\x24' '\xb1\x9c\xfc\x76' \
-            '\xaa\xa1\xf6\xb6' '\xb8\x33\x86\x51'
+        self.reply_bin_0 = b'\x01\x00\x22\xad' b'\x00\x00\x00\x12' \
+            b'\xae\xfc\xab\x3e' b'\xeb\x5a\x96\x67' \
+            b'\x8b\x8b\x2c\x80' b'\x00\x00\x00\x00' \
+            b'\xc0\x15\xf3\xb3' b'\xb4\xaa\x96\xa4' \
+            b'\xa1\x1c\x8c\x80' b'\x00\x00\x00\x00' \
+            b'\xc0\xd0\x09\xd4' b'\x23\x22\x00\x01' \
+            b'\x8f\xbe\xa8\x01' b'\xc2\xe2\xa5\xe5' \
+            b'\x00\x00\x00\x03' b'\x56\x76\x30\xf3' \
+            b'\x7d\xc9\x5e\x19' b'\xee\x57\xd9\x6d' \
+            b'\x90\x97\xc7\x8a' b'\xfe\xb5\xd7\x97' \
+            b'\xb0\x53\x9d\x9d' b'\xee\x4c\xe7\x7a' \
+            b'\xb6\xcd\x73\x24' b'\xb1\x9c\xfc\x76' \
+            b'\xaa\xa1\xf6\xb6' b'\xb8\x33\x86\x51'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryFont._request.to_binary, (), self.req_args_0)
+        bin = request.QueryFont._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2376,7 +2384,7 @@ class TestQueryFont(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryFont._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryFont._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2400,8 +2408,8 @@ class TestQueryTextExtents(unittest.TestCase):
             'font': 1562125736,
             'string': (102, 111, 111),
             }
-        self.req_bin_0 = '\x30\x01\x00\x04' '\x5d\x1c\x25\xa8' \
-            '\x00\x66\x00\x6f' '\x00\x6f\x00\x00'
+        self.req_bin_0 = b'\x30\x01\x00\x04' b'\x5d\x1c\x25\xa8' \
+            b'\x00\x66\x00\x6f' b'\x00\x6f\x00\x00'
 
         self.reply_args_0 = {
             'overall_width': -1378352414,
@@ -2414,14 +2422,14 @@ class TestQueryTextExtents(unittest.TestCase):
             'overall_left': -1046976699,
             'font_descent': -14179,
             }
-        self.reply_bin_0 = '\x01\xdb\x1a\x87' '\x00\x00\x00\x00' \
-            '\xbd\xed\xc8\x9d' '\xa6\x82\xf8\xfd' \
-            '\xad\xd8\x02\xe2' '\xc1\x98\x67\x45' \
-            '\xe0\x64\x80\xea' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\xdb\x1a\x87' b'\x00\x00\x00\x00' \
+            b'\xbd\xed\xc8\x9d' b'\xa6\x82\xf8\xfd' \
+            b'\xad\xd8\x02\xe2' b'\xc1\x98\x67\x45' \
+            b'\xe0\x64\x80\xea' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryTextExtents._request.to_binary, (), self.req_args_0)
+        bin = request.QueryTextExtents._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2439,7 +2447,7 @@ class TestQueryTextExtents(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryTextExtents._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryTextExtents._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2463,24 +2471,24 @@ class TestListFonts(unittest.TestCase):
             'max_names': 53961,
             'pattern': 'bhazr',
             }
-        self.req_bin_0 = '\x31\x00\x00\x04' '\xd2\xc9\x00\x05' \
-            '\x62\x68\x61\x7a' '\x72\x00\x00\x00'
+        self.req_bin_0 = b'\x31\x00\x00\x04' b'\xd2\xc9\x00\x05' \
+            b'\x62\x68\x61\x7a' b'\x72\x00\x00\x00'
 
         self.reply_args_0 = {
             'fonts': ['fie', 'fuzzy', 'foozooom'],
             'sequence_number': 38267,
             }
-        self.reply_bin_0 = '\x01\x00\x95\x7b' '\x00\x00\x00\x05' \
-            '\x00\x03\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x03\x66\x69\x65' '\x05\x66\x75\x7a' \
-            '\x7a\x79\x08\x66' '\x6f\x6f\x7a\x6f' \
-            '\x6f\x6f\x6d\x00'
+        self.reply_bin_0 = b'\x01\x00\x95\x7b' b'\x00\x00\x00\x05' \
+            b'\x00\x03\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x03\x66\x69\x65' b'\x05\x66\x75\x7a' \
+            b'\x7a\x79\x08\x66' b'\x6f\x6f\x7a\x6f' \
+            b'\x6f\x6f\x6d\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ListFonts._request.to_binary, (), self.req_args_0)
+        bin = request.ListFonts._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2498,7 +2506,7 @@ class TestListFonts(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.ListFonts._reply.to_binary, (), self.reply_args_0)
+        bin = request.ListFonts._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2522,8 +2530,8 @@ class TestListFontsWithInfo(unittest.TestCase):
             'max_names': 46571,
             'pattern': 'bhazr2',
             }
-        self.req_bin_0 = '\x32\x00\x00\x04' '\xb5\xeb\x00\x06' \
-            '\x62\x68\x61\x7a' '\x72\x32\x00\x00'
+        self.req_bin_0 = b'\x32\x00\x00\x04' b'\xb5\xeb\x00\x06' \
+            b'\x62\x68\x61\x7a' b'\x72\x32\x00\x00'
 
         self.reply_args_0 = {
             'sequence_number': 20014,
@@ -2542,20 +2550,20 @@ class TestListFontsWithInfo(unittest.TestCase):
             'font_descent': -28978,
             'max_bounds': {'descent': -20692, 'ascent': -6999, 'character_width': -15180, 'left_side_bearing': -7789, 'right_side_bearing': -5339, 'attributes': 1068},
             }
-        self.reply_bin_0 = '\x01\x08\x4e\x2e' '\x00\x00\x00\x0b' \
-            '\x8b\xb9\x83\x5c' '\xcd\x1e\xc6\x49' \
-            '\x93\x43\x09\xa1' '\x00\x00\x00\x00' \
-            '\xe1\x93\xeb\x25' '\xc4\xb4\xe4\xa9' \
-            '\xaf\x2c\x04\x2c' '\x00\x00\x00\x00' \
-            '\x68\x0e\x09\xaf' '\x42\x91\x00\x01' \
-            '\xc0\xd6\xd9\x00' '\x88\xaa\x8e\xce' \
-            '\x76\x53\x9a\xa2' '\x19\xfc\x2b\xb0' \
-            '\x7d\xca\x9c\xc9' '\x66\x6f\x6e\x74' \
-            '\x66\x6f\x6e\x74'
+        self.reply_bin_0 = b'\x01\x08\x4e\x2e' b'\x00\x00\x00\x0b' \
+            b'\x8b\xb9\x83\x5c' b'\xcd\x1e\xc6\x49' \
+            b'\x93\x43\x09\xa1' b'\x00\x00\x00\x00' \
+            b'\xe1\x93\xeb\x25' b'\xc4\xb4\xe4\xa9' \
+            b'\xaf\x2c\x04\x2c' b'\x00\x00\x00\x00' \
+            b'\x68\x0e\x09\xaf' b'\x42\x91\x00\x01' \
+            b'\xc0\xd6\xd9\x00' b'\x88\xaa\x8e\xce' \
+            b'\x76\x53\x9a\xa2' b'\x19\xfc\x2b\xb0' \
+            b'\x7d\xca\x9c\xc9' b'\x66\x6f\x6e\x74' \
+            b'\x66\x6f\x6e\x74'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ListFontsWithInfo._request.to_binary, (), self.req_args_0)
+        bin = request.ListFontsWithInfo._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2573,7 +2581,7 @@ class TestListFontsWithInfo(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.ListFontsWithInfo._reply.to_binary, (), self.reply_args_0)
+        bin = request.ListFontsWithInfo._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2596,18 +2604,18 @@ class TestSetFontPath(unittest.TestCase):
         self.req_args_0 = {
             'path': ['foo', 'bar', 'gazonk'],
             }
-        self.req_bin_0 = '\x33\x00\x00\x06' '\x00\x03\x00\x00' \
-            '\x03\x66\x6f\x6f' '\x03\x62\x61\x72' \
-            '\x06\x67\x61\x7a' '\x6f\x6e\x6b\x00'
+        self.req_bin_0 = b'\x33\x00\x00\x06' b'\x00\x03\x00\x00' \
+            b'\x03\x66\x6f\x6f' b'\x03\x62\x61\x72' \
+            b'\x06\x67\x61\x7a' b'\x6f\x6e\x6b\x00'
 
         self.req_args_1 = {
             'path': [],
             }
-        self.req_bin_1 = '\x33\x00\x00\x02' '\x00\x00\x00\x00'
+        self.req_bin_1 = b'\x33\x00\x00\x02' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetFontPath._request.to_binary, (), self.req_args_0)
+        bin = request.SetFontPath._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2625,7 +2633,7 @@ class TestSetFontPath(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest1(self):
-        bin = apply(request.SetFontPath._request.to_binary, (), self.req_args_1)
+        bin = request.SetFontPath._request.to_binary(*(), **self.req_args_1)
         try:
             assert bin == self.req_bin_1
         except AssertionError:
@@ -2647,31 +2655,31 @@ class TestGetFontPath(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x34\x00\x00\x01'
+        self.req_bin_0 = b'\x34\x00\x00\x01'
 
         self.reply_args_0 = {
             'sequence_number': 21510,
             'paths': ['path1', 'path2232'],
             }
-        self.reply_bin_0 = '\x01\x00\x54\x06' '\x00\x00\x00\x04' \
-            '\x00\x02\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x05\x70\x61\x74' '\x68\x31\x08\x70' \
-            '\x61\x74\x68\x32' '\x32\x33\x32\x00'
+        self.reply_bin_0 = b'\x01\x00\x54\x06' b'\x00\x00\x00\x04' \
+            b'\x00\x02\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x05\x70\x61\x74' b'\x68\x31\x08\x70' \
+            b'\x61\x74\x68\x32' b'\x32\x33\x32\x00'
 
         self.reply_args_1 = {
             'sequence_number': 62463,
             'paths': [],
             }
-        self.reply_bin_1 = '\x01\x00\xf3\xff' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_1 = b'\x01\x00\xf3\xff' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetFontPath._request.to_binary, (), self.req_args_0)
+        bin = request.GetFontPath._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2689,7 +2697,7 @@ class TestGetFontPath(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetFontPath._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetFontPath._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -2707,7 +2715,7 @@ class TestGetFontPath(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply1(self):
-        bin = apply(request.GetFontPath._reply.to_binary, (), self.reply_args_1)
+        bin = request.GetFontPath._reply.to_binary(*(), **self.reply_args_1)
         try:
             assert bin == self.reply_bin_1
         except AssertionError:
@@ -2734,12 +2742,12 @@ class TestCreatePixmap(unittest.TestCase):
             'depth': 145,
             'width': 5641,
             }
-        self.req_bin_0 = '\x35\x91\x00\x04' '\x37\x39\x21\x50' \
-            '\x09\xab\xe8\xd2' '\x16\x09\xff\xeb'
+        self.req_bin_0 = b'\x35\x91\x00\x04' b'\x37\x39\x21\x50' \
+            b'\x09\xab\xe8\xd2' b'\x16\x09\xff\xeb'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CreatePixmap._request.to_binary, (), self.req_args_0)
+        bin = request.CreatePixmap._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2762,11 +2770,11 @@ class TestFreePixmap(unittest.TestCase):
         self.req_args_0 = {
             'pixmap': 213012851,
             }
-        self.req_bin_0 = '\x36\x00\x00\x02' '\x0c\xb2\x51\x73'
+        self.req_bin_0 = b'\x36\x00\x00\x02' b'\x0c\xb2\x51\x73'
 
 
     def testPackRequest0(self):
-        bin = apply(request.FreePixmap._request.to_binary, (), self.req_args_0)
+        bin = request.FreePixmap._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2791,24 +2799,24 @@ class TestCreateGC(unittest.TestCase):
             'drawable': 456876463,
             'attrs': {'dashes': 183, 'fill_rule': 0, 'clip_mask': 620422624, 'plane_mask': 1797423280, 'line_style': 1, 'tile': 77620460, 'arc_mode': 0, 'clip_y_origin': -7419, 'dash_offset': 62459, 'line_width': 50494, 'background': 44336037, 'clip_x_origin': -32045, 'join_style': 2, 'graphics_exposures': 0, 'font': 95118395, 'tile_stipple_y_origin': -17619, 'stipple': 631657813, 'fill_style': 0, 'cap_style': 0, 'subwindow_mode': 0, 'tile_stipple_x_origin': -12494, 'foreground': 2096879871, 'function': 10},
             }
-        self.req_bin_0 = '\x37\x00\x00\x1b' '\x3f\x38\x5c\x6a' \
-            '\x1b\x3b\x61\xaf' '\x00\x7f\xff\xff' \
-            '\x0a\x00\x00\x00' '\x6b\x22\x80\xb0' \
-            '\x7c\xfb\xd8\xff' '\x02\xa4\x83\xa5' \
-            '\xc5\x3e\x00\x00' '\x01\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x02\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x04\xa0\x64\xec' '\x25\xa6\x55\x55' \
-            '\xcf\x32\x00\x00' '\xbb\x2d\x00\x00' \
-            '\x05\xab\x64\x3b' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x82\xd3\x00\x00' \
-            '\xe3\x05\x00\x00' '\x24\xfa\xe5\xe0' \
-            '\xf3\xfb\x00\x00' '\xb7\x00\x00\x00' \
-            '\x00\x00\x00\x00'
+        self.req_bin_0 = b'\x37\x00\x00\x1b' b'\x3f\x38\x5c\x6a' \
+            b'\x1b\x3b\x61\xaf' b'\x00\x7f\xff\xff' \
+            b'\x0a\x00\x00\x00' b'\x6b\x22\x80\xb0' \
+            b'\x7c\xfb\xd8\xff' b'\x02\xa4\x83\xa5' \
+            b'\xc5\x3e\x00\x00' b'\x01\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x02\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x04\xa0\x64\xec' b'\x25\xa6\x55\x55' \
+            b'\xcf\x32\x00\x00' b'\xbb\x2d\x00\x00' \
+            b'\x05\xab\x64\x3b' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x82\xd3\x00\x00' \
+            b'\xe3\x05\x00\x00' b'\x24\xfa\xe5\xe0' \
+            b'\xf3\xfb\x00\x00' b'\xb7\x00\x00\x00' \
+            b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CreateGC._request.to_binary, (), self.req_args_0)
+        bin = request.CreateGC._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2832,23 +2840,23 @@ class TestChangeGC(unittest.TestCase):
             'attrs': {'dashes': 249, 'fill_rule': 1, 'clip_mask': 496525721, 'plane_mask': 1467281901, 'line_style': 2, 'tile': 1713935374, 'arc_mode': 0, 'clip_y_origin': -24572, 'dash_offset': 46636, 'line_width': 61036, 'background': 1598773587, 'clip_x_origin': -19725, 'join_style': 1, 'graphics_exposures': 0, 'font': 429323306, 'tile_stipple_y_origin': -11767, 'stipple': 1365263649, 'fill_style': 2, 'cap_style': 1, 'subwindow_mode': 1, 'tile_stipple_x_origin': -23501, 'foreground': 1272378077, 'function': 11},
             'gc': 518903558,
             }
-        self.req_bin_0 = '\x38\x00\x00\x1a' '\x1e\xed\xd7\x06' \
-            '\x00\x7f\xff\xff' '\x0b\x00\x00\x00' \
-            '\x57\x74\xf1\xed' '\x4b\xd6\xf2\xdd' \
-            '\x5f\x4b\x59\x53' '\xee\x6c\x00\x00' \
-            '\x02\x00\x00\x00' '\x01\x00\x00\x00' \
-            '\x01\x00\x00\x00' '\x02\x00\x00\x00' \
-            '\x01\x00\x00\x00' '\x66\x28\x94\x0e' \
-            '\x51\x60\x45\x21' '\xa4\x33\x00\x00' \
-            '\xd2\x09\x00\x00' '\x19\x96\xf4\x2a' \
-            '\x01\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\xb2\xf3\x00\x00' '\xa0\x04\x00\x00' \
-            '\x1d\x98\x61\x99' '\xb6\x2c\x00\x00' \
-            '\xf9\x00\x00\x00' '\x00\x00\x00\x00'
+        self.req_bin_0 = b'\x38\x00\x00\x1a' b'\x1e\xed\xd7\x06' \
+            b'\x00\x7f\xff\xff' b'\x0b\x00\x00\x00' \
+            b'\x57\x74\xf1\xed' b'\x4b\xd6\xf2\xdd' \
+            b'\x5f\x4b\x59\x53' b'\xee\x6c\x00\x00' \
+            b'\x02\x00\x00\x00' b'\x01\x00\x00\x00' \
+            b'\x01\x00\x00\x00' b'\x02\x00\x00\x00' \
+            b'\x01\x00\x00\x00' b'\x66\x28\x94\x0e' \
+            b'\x51\x60\x45\x21' b'\xa4\x33\x00\x00' \
+            b'\xd2\x09\x00\x00' b'\x19\x96\xf4\x2a' \
+            b'\x01\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\xb2\xf3\x00\x00' b'\xa0\x04\x00\x00' \
+            b'\x1d\x98\x61\x99' b'\xb6\x2c\x00\x00' \
+            b'\xf9\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeGC._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeGC._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2873,12 +2881,12 @@ class TestCopyGC(unittest.TestCase):
             'src_gc': 1958847367,
             'dst_gc': 1311353896,
             }
-        self.req_bin_0 = '\x39\x00\x00\x04' '\x74\xc1\xa3\x87' \
-            '\x4e\x29\xac\x28' '\x3d\xfc\x5c\x92'
+        self.req_bin_0 = b'\x39\x00\x00\x04' b'\x74\xc1\xa3\x87' \
+            b'\x4e\x29\xac\x28' b'\x3d\xfc\x5c\x92'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CopyGC._request.to_binary, (), self.req_args_0)
+        bin = request.CopyGC._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2903,13 +2911,13 @@ class TestSetDashes(unittest.TestCase):
             'dash_offset': 51693,
             'gc': 1639787502,
             }
-        self.req_bin_0 = '\x3a\x00\x00\x06' '\x61\xbd\x2b\xee' \
-            '\xc9\xed\x00\x09' '\xa9\xf1\x9e\xee' \
-            '\xad\x9f\xb6\x8b' '\x8b\x00\x00\x00'
+        self.req_bin_0 = b'\x3a\x00\x00\x06' b'\x61\xbd\x2b\xee' \
+            b'\xc9\xed\x00\x09' b'\xa9\xf1\x9e\xee' \
+            b'\xad\x9f\xb6\x8b' b'\x8b\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetDashes._request.to_binary, (), self.req_args_0)
+        bin = request.SetDashes._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2936,10 +2944,10 @@ class TestSetClipRectangles(unittest.TestCase):
             'y_origin': -16557,
             'ordering': 3,
             }
-        self.req_bin_0 = '\x3b\x03\x00\x07' '\x41\xe7\x44\x74' \
-            '\xa7\x18\xbf\x53' '\xc3\xba\xf4\x3f' \
-            '\xb6\x51\xe7\xff' '\xc9\x22\x9e\xe7' \
-            '\x1e\x66\x26\x9b'
+        self.req_bin_0 = b'\x3b\x03\x00\x07' b'\x41\xe7\x44\x74' \
+            b'\xa7\x18\xbf\x53' b'\xc3\xba\xf4\x3f' \
+            b'\xb6\x51\xe7\xff' b'\xc9\x22\x9e\xe7' \
+            b'\x1e\x66\x26\x9b'
 
         self.req_args_1 = {
             'rectangles': [],
@@ -2948,12 +2956,12 @@ class TestSetClipRectangles(unittest.TestCase):
             'y_origin': -10293,
             'ordering': 0,
             }
-        self.req_bin_1 = '\x3b\x00\x00\x03' '\x11\x60\x29\xbb' \
-            '\x8b\x55\xd7\xcb'
+        self.req_bin_1 = b'\x3b\x00\x00\x03' b'\x11\x60\x29\xbb' \
+            b'\x8b\x55\xd7\xcb'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetClipRectangles._request.to_binary, (), self.req_args_0)
+        bin = request.SetClipRectangles._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -2971,7 +2979,7 @@ class TestSetClipRectangles(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest1(self):
-        bin = apply(request.SetClipRectangles._request.to_binary, (), self.req_args_1)
+        bin = request.SetClipRectangles._request.to_binary(*(), **self.req_args_1)
         try:
             assert bin == self.req_bin_1
         except AssertionError:
@@ -2994,11 +3002,11 @@ class TestFreeGC(unittest.TestCase):
         self.req_args_0 = {
             'gc': 371787524,
             }
-        self.req_bin_0 = '\x3c\x00\x00\x02' '\x16\x29\x07\x04'
+        self.req_bin_0 = b'\x3c\x00\x00\x02' b'\x16\x29\x07\x04'
 
 
     def testPackRequest0(self):
-        bin = apply(request.FreeGC._request.to_binary, (), self.req_args_0)
+        bin = request.FreeGC._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3026,12 +3034,12 @@ class TestClearArea(unittest.TestCase):
             'x': -1843,
             'y': -32148,
             }
-        self.req_bin_0 = '\x3d\x00\x00\x04' '\x4a\xbe\x68\xe1' \
-            '\xf8\xcd\x82\x6c' '\xf9\x4d\xd2\x10'
+        self.req_bin_0 = b'\x3d\x00\x00\x04' b'\x4a\xbe\x68\xe1' \
+            b'\xf8\xcd\x82\x6c' b'\xf9\x4d\xd2\x10'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ClearArea._request.to_binary, (), self.req_args_0)
+        bin = request.ClearArea._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3062,14 +3070,14 @@ class TestCopyArea(unittest.TestCase):
             'dst_x': -19068,
             'dst_y': -4602,
             }
-        self.req_bin_0 = '\x3e\x00\x00\x07' '\x13\x2d\x11\x29' \
-            '\x0f\x05\x83\xf1' '\x07\x83\xb2\x60' \
-            '\x9c\x38\xdf\x4c' '\xb5\x84\xee\x06' \
-            '\xc1\x06\xf0\x3e'
+        self.req_bin_0 = b'\x3e\x00\x00\x07' b'\x13\x2d\x11\x29' \
+            b'\x0f\x05\x83\xf1' b'\x07\x83\xb2\x60' \
+            b'\x9c\x38\xdf\x4c' b'\xb5\x84\xee\x06' \
+            b'\xc1\x06\xf0\x3e'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CopyArea._request.to_binary, (), self.req_args_0)
+        bin = request.CopyArea._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3101,14 +3109,14 @@ class TestCopyPlane(unittest.TestCase):
             'dst_x': -24940,
             'dst_y': -13009,
             }
-        self.req_bin_0 = '\x3f\x00\x00\x08' '\x76\x88\x65\x19' \
-            '\x7e\x6a\x2e\xa4' '\x4b\x78\x61\xdd' \
-            '\xee\x42\xa8\x7f' '\x9e\x94\xcd\x2f' \
-            '\xa1\x19\x83\xfb' '\x7a\x50\x0a\x28'
+        self.req_bin_0 = b'\x3f\x00\x00\x08' b'\x76\x88\x65\x19' \
+            b'\x7e\x6a\x2e\xa4' b'\x4b\x78\x61\xdd' \
+            b'\xee\x42\xa8\x7f' b'\x9e\x94\xcd\x2f' \
+            b'\xa1\x19\x83\xfb' b'\x7a\x50\x0a\x28'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CopyPlane._request.to_binary, (), self.req_args_0)
+        bin = request.CopyPlane._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3134,13 +3142,13 @@ class TestPolyPoint(unittest.TestCase):
             'drawable': 1008674,
             'coord_mode': 1,
             }
-        self.req_bin_0 = '\x40\x01\x00\x06' '\x00\x0f\x64\x22' \
-            '\x0c\x4b\x61\x09' '\xa8\x4f\xbe\xb6' \
-            '\xbf\xaf\xcd\xce' '\xb3\x60\xcc\xb5'
+        self.req_bin_0 = b'\x40\x01\x00\x06' b'\x00\x0f\x64\x22' \
+            b'\x0c\x4b\x61\x09' b'\xa8\x4f\xbe\xb6' \
+            b'\xbf\xaf\xcd\xce' b'\xb3\x60\xcc\xb5'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyPoint._request.to_binary, (), self.req_args_0)
+        bin = request.PolyPoint._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3166,14 +3174,14 @@ class TestPolyLine(unittest.TestCase):
             'drawable': 1668889192,
             'coord_mode': 1,
             }
-        self.req_bin_0 = '\x41\x01\x00\x08' '\x63\x79\x3a\x68' \
-            '\x50\xcc\xb9\xcd' '\xd2\x21\xb6\xa3' \
-            '\xac\x83\xa7\x3e' '\xbb\x55\xca\x7d' \
-            '\x98\x4f\xb4\x67' '\xd1\xfd\x98\x88'
+        self.req_bin_0 = b'\x41\x01\x00\x08' b'\x63\x79\x3a\x68' \
+            b'\x50\xcc\xb9\xcd' b'\xd2\x21\xb6\xa3' \
+            b'\xac\x83\xa7\x3e' b'\xbb\x55\xca\x7d' \
+            b'\x98\x4f\xb4\x67' b'\xd1\xfd\x98\x88'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyLine._request.to_binary, (), self.req_args_0)
+        bin = request.PolyLine._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3198,13 +3206,13 @@ class TestPolySegment(unittest.TestCase):
             'drawable': 146511635,
             'gc': 53385255,
             }
-        self.req_bin_0 = '\x42\x00\x00\x05' '\x08\xbb\x97\x13' \
-            '\x03\x2e\x98\x27' '\xce\xbe\xa1\x44' \
-            '\x9b\x56\xa8\x05'
+        self.req_bin_0 = b'\x42\x00\x00\x05' b'\x08\xbb\x97\x13' \
+            b'\x03\x2e\x98\x27' b'\xce\xbe\xa1\x44' \
+            b'\x9b\x56\xa8\x05'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolySegment._request.to_binary, (), self.req_args_0)
+        bin = request.PolySegment._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3229,15 +3237,15 @@ class TestPolyRectangle(unittest.TestCase):
             'gc': 410140275,
             'rectangles': [{'height': 63567, 'x': -16992, 'width': 11122, 'y': -21320}, {'height': 34652, 'x': -18051, 'width': 59622, 'y': -30426}, {'height': 45646, 'x': -1111, 'width': 46231, 'y': -25261}],
             }
-        self.req_bin_0 = '\x43\x00\x00\x09' '\x72\xe3\x09\x3d' \
-            '\x18\x72\x3e\x73' '\xbd\xa0\xac\xb8' \
-            '\x2b\x72\xf8\x4f' '\xb9\x7d\x89\x26' \
-            '\xe8\xe6\x87\x5c' '\xfb\xa9\x9d\x53' \
-            '\xb4\x97\xb2\x4e'
+        self.req_bin_0 = b'\x43\x00\x00\x09' b'\x72\xe3\x09\x3d' \
+            b'\x18\x72\x3e\x73' b'\xbd\xa0\xac\xb8' \
+            b'\x2b\x72\xf8\x4f' b'\xb9\x7d\x89\x26' \
+            b'\xe8\xe6\x87\x5c' b'\xfb\xa9\x9d\x53' \
+            b'\xb4\x97\xb2\x4e'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyRectangle._request.to_binary, (), self.req_args_0)
+        bin = request.PolyRectangle._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3262,16 +3270,16 @@ class TestPolyArc(unittest.TestCase):
             'drawable': 718777148,
             'gc': 1127021391,
             }
-        self.req_bin_0 = '\x44\x00\x00\x0c' '\x2a\xd7\xab\x3c' \
-            '\x43\x2c\xfb\x4f' '\xec\xb1\xdc\x0b' \
-            '\xff\xa8\x92\xad' '\xbd\xad\x9b\xce' \
-            '\xc9\xd7\xa6\xb2' '\xf2\xdd\x24\x6a' \
-            '\xae\xd3\xde\xce' '\xce\x6b\xe2\x82' \
-            '\xf8\xf4\xf7\x22' '\xfb\x31\xfc\xd7'
+        self.req_bin_0 = b'\x44\x00\x00\x0c' b'\x2a\xd7\xab\x3c' \
+            b'\x43\x2c\xfb\x4f' b'\xec\xb1\xdc\x0b' \
+            b'\xff\xa8\x92\xad' b'\xbd\xad\x9b\xce' \
+            b'\xc9\xd7\xa6\xb2' b'\xf2\xdd\x24\x6a' \
+            b'\xae\xd3\xde\xce' b'\xce\x6b\xe2\x82' \
+            b'\xf8\xf4\xf7\x22' b'\xfb\x31\xfc\xd7'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyArc._request.to_binary, (), self.req_args_0)
+        bin = request.PolyArc._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3298,14 +3306,14 @@ class TestFillPoly(unittest.TestCase):
             'drawable': 1326525185,
             'coord_mode': 0,
             }
-        self.req_bin_0 = '\x45\x00\x00\x07' '\x4f\x11\x2b\x01' \
-            '\x3f\xce\x79\x1a' '\x01\x00\x00\x00' \
-            '\xb6\xc3\xb4\x29' '\xdd\x38\x96\xbc' \
-            '\xcb\xe8\xdb\x0a'
+        self.req_bin_0 = b'\x45\x00\x00\x07' b'\x4f\x11\x2b\x01' \
+            b'\x3f\xce\x79\x1a' b'\x01\x00\x00\x00' \
+            b'\xb6\xc3\xb4\x29' b'\xdd\x38\x96\xbc' \
+            b'\xcb\xe8\xdb\x0a'
 
 
     def testPackRequest0(self):
-        bin = apply(request.FillPoly._request.to_binary, (), self.req_args_0)
+        bin = request.FillPoly._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3330,14 +3338,14 @@ class TestPolyFillRectangle(unittest.TestCase):
             'gc': 1965498255,
             'rectangles': [{'height': 36920, 'x': -2965, 'width': 26437, 'y': -3568}, {'height': 44383, 'x': -18327, 'width': 37730, 'y': -26752}],
             }
-        self.req_bin_0 = '\x46\x00\x00\x07' '\x65\xd8\x42\xcc' \
-            '\x75\x27\x1f\x8f' '\xf4\x6b\xf2\x10' \
-            '\x67\x45\x90\x38' '\xb8\x69\x97\x80' \
-            '\x93\x62\xad\x5f'
+        self.req_bin_0 = b'\x46\x00\x00\x07' b'\x65\xd8\x42\xcc' \
+            b'\x75\x27\x1f\x8f' b'\xf4\x6b\xf2\x10' \
+            b'\x67\x45\x90\x38' b'\xb8\x69\x97\x80' \
+            b'\x93\x62\xad\x5f'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyFillRectangle._request.to_binary, (), self.req_args_0)
+        bin = request.PolyFillRectangle._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3362,13 +3370,13 @@ class TestPolyFillArc(unittest.TestCase):
             'drawable': 2083870696,
             'gc': 414470877,
             }
-        self.req_bin_0 = '\x47\x00\x00\x06' '\x7c\x35\x57\xe8' \
-            '\x18\xb4\x52\xdd' '\xd5\xfe\xb3\x9d' \
-            '\xd2\x3b\xfa\x72' '\x91\x38\xe5\xc8'
+        self.req_bin_0 = b'\x47\x00\x00\x06' b'\x7c\x35\x57\xe8' \
+            b'\x18\xb4\x52\xdd' b'\xd5\xfe\xb3\x9d' \
+            b'\xd2\x3b\xfa\x72' b'\x91\x38\xe5\xc8'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyFillArc._request.to_binary, (), self.req_args_0)
+        bin = request.PolyFillArc._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3400,15 +3408,15 @@ class TestPutImage(unittest.TestCase):
             'width': 62850,
             'dst_y': -30693,
             }
-        self.req_bin_0 = '\x48\x01\x00\x09' '\x5b\x79\x56\xff' \
-            '\x0c\x83\x06\x83' '\xf5\x82\x26\x9b' \
-            '\xf3\x2c\x88\x1b' '\x93\xad\x00\x00' \
-            '\x62\x69\x74\x20' '\x6d\x61\x70\x20' \
-            '\x64\x61\x74\x61'
+        self.req_bin_0 = b'\x48\x01\x00\x09' b'\x5b\x79\x56\xff' \
+            b'\x0c\x83\x06\x83' b'\xf5\x82\x26\x9b' \
+            b'\xf3\x2c\x88\x1b' b'\x93\xad\x00\x00' \
+            b'\x62\x69\x74\x20' b'\x6d\x61\x70\x20' \
+            b'\x64\x61\x74\x61'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PutImage._request.to_binary, (), self.req_args_0)
+        bin = request.PutImage._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3437,9 +3445,9 @@ class TestGetImage(unittest.TestCase):
             'format': 1,
             'width': 58993,
             }
-        self.req_bin_0 = '\x49\x01\x00\x05' '\x4f\x3e\x5f\x83' \
-            '\x93\xe8\x87\x75' '\xe6\x71\xa6\xa1' \
-            '\x68\xae\xae\x00'
+        self.req_bin_0 = b'\x49\x01\x00\x05' b'\x4f\x3e\x5f\x83' \
+            b'\x93\xe8\x87\x75' b'\xe6\x71\xa6\xa1' \
+            b'\x68\xae\xae\x00'
 
         self.reply_args_0 = {
             'sequence_number': 54997,
@@ -3447,18 +3455,18 @@ class TestGetImage(unittest.TestCase):
             'visual': 1108632607,
             'depth': 181,
             }
-        self.reply_bin_0 = '\x01\xb5\xd6\xd5' '\x00\x00\x00\x07' \
-            '\x42\x14\x64\x1f' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x74\x68\x69\x73' '\x20\x69\x73\x20' \
-            '\x72\x65\x61\x6c' '\x20\x6c\x79\x20' \
-            '\x69\x6d\x61\x67' '\x20\x65\x20\x62' \
-            '\x2d\x6d\x61\x70'
+        self.reply_bin_0 = b'\x01\xb5\xd6\xd5' b'\x00\x00\x00\x07' \
+            b'\x42\x14\x64\x1f' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x74\x68\x69\x73' b'\x20\x69\x73\x20' \
+            b'\x72\x65\x61\x6c' b'\x20\x6c\x79\x20' \
+            b'\x69\x6d\x61\x67' b'\x20\x65\x20\x62' \
+            b'\x2d\x6d\x61\x70'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetImage._request.to_binary, (), self.req_args_0)
+        bin = request.GetImage._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3476,7 +3484,7 @@ class TestGetImage(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetImage._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetImage._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -3503,14 +3511,14 @@ class TestPolyText8(unittest.TestCase):
             'items': [{'delta': 2, 'string': 'zoo'}, 16909060, {'delta': 0, 'string': 'ie'}],
             'y': -8902,
             }
-        self.req_bin_0 = '\x4a\x00\x00\x08' '\x5c\x72\x5c\x8a' \
-            '\x58\x4e\xe2\x69' '\xcb\x14\xdd\x3a' \
-            '\x03\x02\x7a\x6f' '\x6f\xff\x01\x02' \
-            '\x03\x04\x02\x00' '\x69\x65\x00\x00'
+        self.req_bin_0 = b'\x4a\x00\x00\x08' b'\x5c\x72\x5c\x8a' \
+            b'\x58\x4e\xe2\x69' b'\xcb\x14\xdd\x3a' \
+            b'\x03\x02\x7a\x6f' b'\x6f\xff\x01\x02' \
+            b'\x03\x04\x02\x00' b'\x69\x65\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyText8._request.to_binary, (), self.req_args_0)
+        bin = request.PolyText8._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3537,14 +3545,14 @@ class TestPolyText16(unittest.TestCase):
             'items': [{'delta': 2, 'string': (4131, 18)}, 16909060],
             'y': -2741,
             }
-        self.req_bin_0 = '\x4b\x00\x00\x07' '\x5e\xda\xf1\xf4' \
-            '\x17\xe2\x28\x18' '\x84\x82\xf5\x4b' \
-            '\x02\x02\x10\x23' '\x00\x12\xff\x01' \
-            '\x02\x03\x04\x00'
+        self.req_bin_0 = b'\x4b\x00\x00\x07' b'\x5e\xda\xf1\xf4' \
+            b'\x17\xe2\x28\x18' b'\x84\x82\xf5\x4b' \
+            b'\x02\x02\x10\x23' b'\x00\x12\xff\x01' \
+            b'\x02\x03\x04\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.PolyText16._request.to_binary, (), self.req_args_0)
+        bin = request.PolyText16._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3571,13 +3579,13 @@ class TestImageText8(unittest.TestCase):
             'x': -16077,
             'y': -4873,
             }
-        self.req_bin_0 = '\x4c\x06\x00\x06' '\x6c\xb1\xdd\x5d' \
-            '\x53\x10\x80\x21' '\xc1\x33\xec\xf7' \
-            '\x73\x68\x6f\x77' '\x6d\x65\x00\x00'
+        self.req_bin_0 = b'\x4c\x06\x00\x06' b'\x6c\xb1\xdd\x5d' \
+            b'\x53\x10\x80\x21' b'\xc1\x33\xec\xf7' \
+            b'\x73\x68\x6f\x77' b'\x6d\x65\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ImageText8._request.to_binary, (), self.req_args_0)
+        bin = request.ImageText8._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3604,14 +3612,14 @@ class TestImageText16(unittest.TestCase):
             'x': -21343,
             'y': -24237,
             }
-        self.req_bin_0 = '\x4d\x08\x00\x08' '\x02\x00\xce\x10' \
-            '\x65\x77\x08\xde' '\xac\xa1\xa1\x53' \
-            '\x00\x73\x00\x68' '\x00\x6f\x00\x77' \
-            '\x00\x6d\x00\x6f' '\x00\x72\x00\x65'
+        self.req_bin_0 = b'\x4d\x08\x00\x08' b'\x02\x00\xce\x10' \
+            b'\x65\x77\x08\xde' b'\xac\xa1\xa1\x53' \
+            b'\x00\x73\x00\x68' b'\x00\x6f\x00\x77' \
+            b'\x00\x6d\x00\x6f' b'\x00\x72\x00\x65'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ImageText16._request.to_binary, (), self.req_args_0)
+        bin = request.ImageText16._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3637,12 +3645,12 @@ class TestCreateColormap(unittest.TestCase):
             'visual': 813982403,
             'window': 698475631,
             }
-        self.req_bin_0 = '\x4e\x00\x00\x04' '\x09\x63\xd1\xab' \
-            '\x29\xa1\xe4\x6f' '\x30\x84\x62\xc3'
+        self.req_bin_0 = b'\x4e\x00\x00\x04' b'\x09\x63\xd1\xab' \
+            b'\x29\xa1\xe4\x6f' b'\x30\x84\x62\xc3'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CreateColormap._request.to_binary, (), self.req_args_0)
+        bin = request.CreateColormap._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3665,11 +3673,11 @@ class TestFreeColormap(unittest.TestCase):
         self.req_args_0 = {
             'cmap': 1296514923,
             }
-        self.req_bin_0 = '\x4f\x00\x00\x02' '\x4d\x47\x3f\x6b'
+        self.req_bin_0 = b'\x4f\x00\x00\x02' b'\x4d\x47\x3f\x6b'
 
 
     def testPackRequest0(self):
-        bin = apply(request.FreeColormap._request.to_binary, (), self.req_args_0)
+        bin = request.FreeColormap._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3693,12 +3701,12 @@ class TestCopyColormapAndFree(unittest.TestCase):
             'src_cmap': 1049336329,
             'mid': 1237242690,
             }
-        self.req_bin_0 = '\x50\x00\x00\x03' '\x49\xbe\xd3\x42' \
-            '\x3e\x8b\x9a\x09'
+        self.req_bin_0 = b'\x50\x00\x00\x03' b'\x49\xbe\xd3\x42' \
+            b'\x3e\x8b\x9a\x09'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CopyColormapAndFree._request.to_binary, (), self.req_args_0)
+        bin = request.CopyColormapAndFree._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3721,11 +3729,11 @@ class TestInstallColormap(unittest.TestCase):
         self.req_args_0 = {
             'cmap': 1539075582,
             }
-        self.req_bin_0 = '\x51\x00\x00\x02' '\x5b\xbc\x6d\xfe'
+        self.req_bin_0 = b'\x51\x00\x00\x02' b'\x5b\xbc\x6d\xfe'
 
 
     def testPackRequest0(self):
-        bin = apply(request.InstallColormap._request.to_binary, (), self.req_args_0)
+        bin = request.InstallColormap._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3748,11 +3756,11 @@ class TestUninstallColormap(unittest.TestCase):
         self.req_args_0 = {
             'cmap': 959493342,
             }
-        self.req_bin_0 = '\x52\x00\x00\x02' '\x39\x30\xb4\xde'
+        self.req_bin_0 = b'\x52\x00\x00\x02' b'\x39\x30\xb4\xde'
 
 
     def testPackRequest0(self):
-        bin = apply(request.UninstallColormap._request.to_binary, (), self.req_args_0)
+        bin = request.UninstallColormap._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3775,21 +3783,21 @@ class TestListInstalledColormaps(unittest.TestCase):
         self.req_args_0 = {
             'window': 1517864638,
             }
-        self.req_bin_0 = '\x53\x00\x00\x02' '\x5a\x78\xc6\xbe'
+        self.req_bin_0 = b'\x53\x00\x00\x02' b'\x5a\x78\xc6\xbe'
 
         self.reply_args_0 = {
             'cmaps': [2146327722, 1361260227],
             'sequence_number': 61652,
             }
-        self.reply_bin_0 = '\x01\x00\xf0\xd4' '\x00\x00\x00\x02' \
-            '\x00\x02\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x7f\xee\x5c\xaa' '\x51\x23\x2e\xc3'
+        self.reply_bin_0 = b'\x01\x00\xf0\xd4' b'\x00\x00\x00\x02' \
+            b'\x00\x02\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x7f\xee\x5c\xaa' b'\x51\x23\x2e\xc3'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ListInstalledColormaps._request.to_binary, (), self.req_args_0)
+        bin = request.ListInstalledColormaps._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3807,7 +3815,7 @@ class TestListInstalledColormaps(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.ListInstalledColormaps._reply.to_binary, (), self.reply_args_0)
+        bin = request.ListInstalledColormaps._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -3833,8 +3841,8 @@ class TestAllocColor(unittest.TestCase):
             'cmap': 523356125,
             'blue': 49580,
             }
-        self.req_bin_0 = '\x54\x00\x00\x04' '\x1f\x31\xc7\xdd' \
-            '\x9b\x2d\xc2\xbe' '\xc1\xac\x00\x00'
+        self.req_bin_0 = b'\x54\x00\x00\x04' b'\x1f\x31\xc7\xdd' \
+            b'\x9b\x2d\xc2\xbe' b'\xc1\xac\x00\x00'
 
         self.reply_args_0 = {
             'sequence_number': 10904,
@@ -3843,14 +3851,14 @@ class TestAllocColor(unittest.TestCase):
             'pixel': 1067923656,
             'blue': 14525,
             }
-        self.reply_bin_0 = '\x01\x00\x2a\x98' '\x00\x00\x00\x00' \
-            '\xab\x08\x0c\x62' '\x38\xbd\x00\x00' \
-            '\x3f\xa7\x38\xc8' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x2a\x98' b'\x00\x00\x00\x00' \
+            b'\xab\x08\x0c\x62' b'\x38\xbd\x00\x00' \
+            b'\x3f\xa7\x38\xc8' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.AllocColor._request.to_binary, (), self.req_args_0)
+        bin = request.AllocColor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3868,7 +3876,7 @@ class TestAllocColor(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.AllocColor._reply.to_binary, (), self.reply_args_0)
+        bin = request.AllocColor._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -3892,9 +3900,9 @@ class TestAllocNamedColor(unittest.TestCase):
             'cmap': 128217824,
             'name': 'octarin',
             }
-        self.req_bin_0 = '\x55\x00\x00\x05' '\x07\xa4\x72\xe0' \
-            '\x00\x07\x00\x00' '\x6f\x63\x74\x61' \
-            '\x72\x69\x6e\x00'
+        self.req_bin_0 = b'\x55\x00\x00\x05' b'\x07\xa4\x72\xe0' \
+            b'\x00\x07\x00\x00' b'\x6f\x63\x74\x61' \
+            b'\x72\x69\x6e\x00'
 
         self.reply_args_0 = {
             'sequence_number': 19971,
@@ -3906,14 +3914,14 @@ class TestAllocNamedColor(unittest.TestCase):
             'screen_blue': 43109,
             'exact_red': 64213,
             }
-        self.reply_bin_0 = '\x01\x00\x4e\x03' '\x00\x00\x00\x00' \
-            '\x4e\xee\x49\x76' '\xfa\xd5\x71\x8b' \
-            '\xe5\xbb\x82\x63' '\xc5\x43\xa8\x65' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x4e\x03' b'\x00\x00\x00\x00' \
+            b'\x4e\xee\x49\x76' b'\xfa\xd5\x71\x8b' \
+            b'\xe5\xbb\x82\x63' b'\xc5\x43\xa8\x65' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.AllocNamedColor._request.to_binary, (), self.req_args_0)
+        bin = request.AllocNamedColor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -3931,7 +3939,7 @@ class TestAllocNamedColor(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.AllocNamedColor._reply.to_binary, (), self.reply_args_0)
+        bin = request.AllocNamedColor._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -3957,42 +3965,42 @@ class TestAllocColorCells(unittest.TestCase):
             'cmap': 675372338,
             'contiguous': 1,
             }
-        self.req_bin_0 = '\x56\x01\x00\x03' '\x28\x41\x5d\x32' \
-            '\xe5\x4a\x80\x63'
+        self.req_bin_0 = b'\x56\x01\x00\x03' b'\x28\x41\x5d\x32' \
+            b'\xe5\x4a\x80\x63'
 
         self.reply_args_0 = {
             'masks': [733927381, 1023311668, 595898647],
             'pixels': [693075497, 1294879029, 1478712895, 1781963728, 1442185575, 1654003869, 787619123, 1049825849, 1773935772, 1689075922, 1626562257, 177731275, 661046122, 1970509470, 1918486395, 688539096, 41044851],
             'sequence_number': 54025,
             }
-        self.reply_bin_0 = '\x01\x00\xd3\x09' '\x00\x00\x00\x14' \
-            '\x00\x11\x00\x03' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x29\x4f\x7e\x29' '\x4d\x2e\x49\x35' \
-            '\x58\x23\x5e\x3f' '\x6a\x36\x9b\xd0' \
-            '\x55\xf6\x01\x67' '\x62\x96\x18\x9d' \
-            '\x2e\xf2\x1d\x33' '\x3e\x93\x12\x39' \
-            '\x69\xbc\x1c\x9c' '\x64\xad\x40\xd2' \
-            '\x60\xf3\x5e\xd1' '\x0a\x97\xf6\xcb' \
-            '\x27\x66\xc3\x6a' '\x75\x73\x96\x9e' \
-            '\x72\x59\xc7\x7b' '\x29\x0a\x45\xd8' \
-            '\x02\x72\x4b\x73' '\x2b\xbe\xd7\xd5' \
-            '\x3c\xfe\x7f\x34' '\x23\x84\xb1\x17'
+        self.reply_bin_0 = b'\x01\x00\xd3\x09' b'\x00\x00\x00\x14' \
+            b'\x00\x11\x00\x03' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x29\x4f\x7e\x29' b'\x4d\x2e\x49\x35' \
+            b'\x58\x23\x5e\x3f' b'\x6a\x36\x9b\xd0' \
+            b'\x55\xf6\x01\x67' b'\x62\x96\x18\x9d' \
+            b'\x2e\xf2\x1d\x33' b'\x3e\x93\x12\x39' \
+            b'\x69\xbc\x1c\x9c' b'\x64\xad\x40\xd2' \
+            b'\x60\xf3\x5e\xd1' b'\x0a\x97\xf6\xcb' \
+            b'\x27\x66\xc3\x6a' b'\x75\x73\x96\x9e' \
+            b'\x72\x59\xc7\x7b' b'\x29\x0a\x45\xd8' \
+            b'\x02\x72\x4b\x73' b'\x2b\xbe\xd7\xd5' \
+            b'\x3c\xfe\x7f\x34' b'\x23\x84\xb1\x17'
 
         self.reply_args_1 = {
             'masks': [],
             'pixels': [],
             'sequence_number': 6273,
             }
-        self.reply_bin_1 = '\x01\x00\x18\x81' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_1 = b'\x01\x00\x18\x81' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.AllocColorCells._request.to_binary, (), self.req_args_0)
+        bin = request.AllocColorCells._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4010,7 +4018,7 @@ class TestAllocColorCells(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.AllocColorCells._reply.to_binary, (), self.reply_args_0)
+        bin = request.AllocColorCells._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4028,7 +4036,7 @@ class TestAllocColorCells(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply1(self):
-        bin = apply(request.AllocColorCells._reply.to_binary, (), self.reply_args_1)
+        bin = request.AllocColorCells._reply.to_binary(*(), **self.reply_args_1)
         try:
             assert bin == self.reply_bin_1
         except AssertionError:
@@ -4056,8 +4064,8 @@ class TestAllocColorPlanes(unittest.TestCase):
             'contiguous': 0,
             'blue': 23880,
             }
-        self.req_bin_0 = '\x57\x00\x00\x04' '\x12\x5c\x02\x63' \
-            '\xe3\xa3\x59\x5c' '\x24\xd1\x5d\x48'
+        self.req_bin_0 = b'\x57\x00\x00\x04' b'\x12\x5c\x02\x63' \
+            b'\xe3\xa3\x59\x5c' b'\x24\xd1\x5d\x48'
 
         self.reply_args_0 = {
             'green_mask': 265888391,
@@ -4066,16 +4074,16 @@ class TestAllocColorPlanes(unittest.TestCase):
             'blue_mask': 44676180,
             'red_mask': 734623206,
             }
-        self.reply_bin_0 = '\x01\x00\x8d\x4f' '\x00\x00\x00\x04' \
-            '\x00\x04\x00\x00' '\x2b\xc9\x75\xe6' \
-            '\x0f\xd9\x22\x87' '\x02\xa9\xb4\x54' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x1d\x52\xbe\x09' '\x4d\x99\x83\xbe' \
-            '\x5f\xa5\xda\xfd' '\x54\x90\x6c\x90'
+        self.reply_bin_0 = b'\x01\x00\x8d\x4f' b'\x00\x00\x00\x04' \
+            b'\x00\x04\x00\x00' b'\x2b\xc9\x75\xe6' \
+            b'\x0f\xd9\x22\x87' b'\x02\xa9\xb4\x54' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x1d\x52\xbe\x09' b'\x4d\x99\x83\xbe' \
+            b'\x5f\xa5\xda\xfd' b'\x54\x90\x6c\x90'
 
 
     def testPackRequest0(self):
-        bin = apply(request.AllocColorPlanes._request.to_binary, (), self.req_args_0)
+        bin = request.AllocColorPlanes._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4093,7 +4101,7 @@ class TestAllocColorPlanes(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.AllocColorPlanes._reply.to_binary, (), self.reply_args_0)
+        bin = request.AllocColorPlanes._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4118,20 +4126,20 @@ class TestFreeColors(unittest.TestCase):
             'pixels': [61281082, 398475082, 1660604639, 1516738417, 1211104329, 105034864, 884930615, 902914796, 288637231, 2097165249, 1171127263, 1027274519, 806213035, 1485898709, 542709465, 169067149, 1230881159],
             'plane_mask': 1204733200,
             }
-        self.req_bin_0 = '\x58\x00\x00\x14' '\x2b\x55\x43\xd8' \
-            '\x47\xce\xc5\x10' '\x03\xa7\x13\x3a' \
-            '\x17\xc0\x3f\x4a' '\x62\xfa\xd0\xdf' \
-            '\x5a\x67\x97\x71' '\x48\x2f\xfc\x49' \
-            '\x06\x42\xb4\x70' '\x34\xbe\xf8\x37' \
-            '\x35\xd1\x62\xec' '\x11\x34\x41\x2f' \
-            '\x7d\x00\x33\xc1' '\x45\xcd\xfb\xdf' \
-            '\x3d\x3a\xf7\x17' '\x30\x0d\xd5\xab' \
-            '\x58\x91\x03\xd5' '\x20\x59\x16\xd9' \
-            '\x0a\x13\xc2\x8d' '\x49\x5d\xc1\x87'
+        self.req_bin_0 = b'\x58\x00\x00\x14' b'\x2b\x55\x43\xd8' \
+            b'\x47\xce\xc5\x10' b'\x03\xa7\x13\x3a' \
+            b'\x17\xc0\x3f\x4a' b'\x62\xfa\xd0\xdf' \
+            b'\x5a\x67\x97\x71' b'\x48\x2f\xfc\x49' \
+            b'\x06\x42\xb4\x70' b'\x34\xbe\xf8\x37' \
+            b'\x35\xd1\x62\xec' b'\x11\x34\x41\x2f' \
+            b'\x7d\x00\x33\xc1' b'\x45\xcd\xfb\xdf' \
+            b'\x3d\x3a\xf7\x17' b'\x30\x0d\xd5\xab' \
+            b'\x58\x91\x03\xd5' b'\x20\x59\x16\xd9' \
+            b'\x0a\x13\xc2\x8d' b'\x49\x5d\xc1\x87'
 
 
     def testPackRequest0(self):
-        bin = apply(request.FreeColors._request.to_binary, (), self.req_args_0)
+        bin = request.FreeColors._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4155,17 +4163,17 @@ class TestStoreColors(unittest.TestCase):
             'cmap': 501035281,
             'items': [{'red': 27925, 'pixel': 1094971765, 'green': 3673, 'flags': 189, 'blue': 31593}, {'red': 41633, 'pixel': 1330003189, 'green': 56186, 'flags': 178, 'blue': 30263}, {'red': 36007, 'pixel': 1813524037, 'green': 29697, 'flags': 224, 'blue': 14071}, {'red': 45716, 'pixel': 1987610486, 'green': 55405, 'flags': 200, 'blue': 35734}],
             }
-        self.req_bin_0 = '\x59\x00\x00\x0e' '\x1d\xdd\x31\x11' \
-            '\x41\x43\xf1\x75' '\x6d\x15\x0e\x59' \
-            '\x7b\x69\xbd\x00' '\x4f\x46\x3c\xf5' \
-            '\xa2\xa1\xdb\x7a' '\x76\x37\xb2\x00' \
-            '\x6c\x18\x2e\x45' '\x8c\xa7\x74\x01' \
-            '\x36\xf7\xe0\x00' '\x76\x78\x87\x76' \
-            '\xb2\x94\xd8\x6d' '\x8b\x96\xc8\x00'
+        self.req_bin_0 = b'\x59\x00\x00\x0e' b'\x1d\xdd\x31\x11' \
+            b'\x41\x43\xf1\x75' b'\x6d\x15\x0e\x59' \
+            b'\x7b\x69\xbd\x00' b'\x4f\x46\x3c\xf5' \
+            b'\xa2\xa1\xdb\x7a' b'\x76\x37\xb2\x00' \
+            b'\x6c\x18\x2e\x45' b'\x8c\xa7\x74\x01' \
+            b'\x36\xf7\xe0\x00' b'\x76\x78\x87\x76' \
+            b'\xb2\x94\xd8\x6d' b'\x8b\x96\xc8\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.StoreColors._request.to_binary, (), self.req_args_0)
+        bin = request.StoreColors._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4191,13 +4199,13 @@ class TestStoreNamedColor(unittest.TestCase):
             'cmap': 2061119590,
             'pixel': 1846011298,
             }
-        self.req_bin_0 = '\x5a\xba\x00\x05' '\x7a\xda\x30\x66' \
-            '\x6e\x07\xe5\xa2' '\x00\x04\x00\x00' \
-            '\x62\x6c\x75\x65'
+        self.req_bin_0 = b'\x5a\xba\x00\x05' b'\x7a\xda\x30\x66' \
+            b'\x6e\x07\xe5\xa2' b'\x00\x04\x00\x00' \
+            b'\x62\x6c\x75\x65'
 
 
     def testPackRequest0(self):
-        bin = apply(request.StoreNamedColor._request.to_binary, (), self.req_args_0)
+        bin = request.StoreNamedColor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4221,35 +4229,35 @@ class TestQueryColors(unittest.TestCase):
             'cmap': 596369797,
             'pixels': [1018587496, 1553480933, 952694607, 341816269, 306591348, 1178729919, 173027853, 875811363],
             }
-        self.req_bin_0 = '\x5b\x00\x00\x0a' '\x23\x8b\xe1\x85' \
-            '\x3c\xb6\x69\x68' '\x5c\x98\x3c\xe5' \
-            '\x38\xc8\xf7\x4f' '\x14\x5f\xb3\xcd' \
-            '\x12\x46\x36\x74' '\x46\x41\xfd\xbf' \
-            '\x0a\x50\x32\x0d' '\x34\x33\xd2\x23'
+        self.req_bin_0 = b'\x5b\x00\x00\x0a' b'\x23\x8b\xe1\x85' \
+            b'\x3c\xb6\x69\x68' b'\x5c\x98\x3c\xe5' \
+            b'\x38\xc8\xf7\x4f' b'\x14\x5f\xb3\xcd' \
+            b'\x12\x46\x36\x74' b'\x46\x41\xfd\xbf' \
+            b'\x0a\x50\x32\x0d' b'\x34\x33\xd2\x23'
 
         self.reply_args_0 = {
             'colors': [{'red': 6715, 'blue': 40144, 'green': 56664}, {'red': 5799, 'blue': 22078, 'green': 35523}, {'red': 60111, 'blue': 58654, 'green': 25206}, {'red': 7433, 'blue': 60908, 'green': 14468}, {'red': 31213, 'blue': 9298, 'green': 27481}],
             'sequence_number': 60323,
             }
-        self.reply_bin_0 = '\x01\x00\xeb\xa3' '\x00\x00\x00\x0a' \
-            '\x00\x05\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x1a\x3b\xdd\x58' '\x9c\xd0\x00\x00' \
-            '\x16\xa7\x8a\xc3' '\x56\x3e\x00\x00' \
-            '\xea\xcf\x62\x76' '\xe5\x1e\x00\x00' \
-            '\x1d\x09\x38\x84' '\xed\xec\x00\x00' \
-            '\x79\xed\x6b\x59' '\x24\x52\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\xeb\xa3' b'\x00\x00\x00\x0a' \
+            b'\x00\x05\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x1a\x3b\xdd\x58' b'\x9c\xd0\x00\x00' \
+            b'\x16\xa7\x8a\xc3' b'\x56\x3e\x00\x00' \
+            b'\xea\xcf\x62\x76' b'\xe5\x1e\x00\x00' \
+            b'\x1d\x09\x38\x84' b'\xed\xec\x00\x00' \
+            b'\x79\xed\x6b\x59' b'\x24\x52\x00\x00'
 
         self.req_args_1 = {
             'cmap': 79317049,
             'pixels': [],
             }
-        self.req_bin_1 = '\x5b\x00\x00\x02' '\x04\xba\x48\x39'
+        self.req_bin_1 = b'\x5b\x00\x00\x02' b'\x04\xba\x48\x39'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryColors._request.to_binary, (), self.req_args_0)
+        bin = request.QueryColors._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4267,7 +4275,7 @@ class TestQueryColors(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackRequest1(self):
-        bin = apply(request.QueryColors._request.to_binary, (), self.req_args_1)
+        bin = request.QueryColors._request.to_binary(*(), **self.req_args_1)
         try:
             assert bin == self.req_bin_1
         except AssertionError:
@@ -4285,7 +4293,7 @@ class TestQueryColors(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryColors._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryColors._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4309,9 +4317,9 @@ class TestLookupColor(unittest.TestCase):
             'cmap': 789574750,
             'name': 'octarin',
             }
-        self.req_bin_0 = '\x5c\x00\x00\x05' '\x2f\x0f\xf4\x5e' \
-            '\x00\x07\x00\x00' '\x6f\x63\x74\x61' \
-            '\x72\x69\x6e\x00'
+        self.req_bin_0 = b'\x5c\x00\x00\x05' b'\x2f\x0f\xf4\x5e' \
+            b'\x00\x07\x00\x00' b'\x6f\x63\x74\x61' \
+            b'\x72\x69\x6e\x00'
 
         self.reply_args_0 = {
             'sequence_number': 21040,
@@ -4322,14 +4330,14 @@ class TestLookupColor(unittest.TestCase):
             'screen_blue': 29893,
             'exact_red': 41875,
             }
-        self.reply_bin_0 = '\x01\x00\x52\x30' '\x00\x00\x00\x00' \
-            '\xa3\x93\xe8\x9a' '\xf0\x48\xc7\x59' \
-            '\xff\x22\x74\xc5' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x52\x30' b'\x00\x00\x00\x00' \
+            b'\xa3\x93\xe8\x9a' b'\xf0\x48\xc7\x59' \
+            b'\xff\x22\x74\xc5' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.LookupColor._request.to_binary, (), self.req_args_0)
+        bin = request.LookupColor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4347,7 +4355,7 @@ class TestLookupColor(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.LookupColor._reply.to_binary, (), self.reply_args_0)
+        bin = request.LookupColor._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4380,14 +4388,14 @@ class TestCreateCursor(unittest.TestCase):
             'back_red': 31899,
             'source': 794739749,
             }
-        self.req_bin_0 = '\x5d\x00\x00\x08' '\x78\x85\xb3\xb9' \
-            '\x2f\x5e\xc4\x25' '\x19\x0b\x92\xe4' \
-            '\xff\x2b\xa8\x14' '\xf8\x34\x7c\x9b' \
-            '\x13\xe2\xc2\xd7' '\x37\x77\x80\x0c'
+        self.req_bin_0 = b'\x5d\x00\x00\x08' b'\x78\x85\xb3\xb9' \
+            b'\x2f\x5e\xc4\x25' b'\x19\x0b\x92\xe4' \
+            b'\xff\x2b\xa8\x14' b'\xf8\x34\x7c\x9b' \
+            b'\x13\xe2\xc2\xd7' b'\x37\x77\x80\x0c'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CreateCursor._request.to_binary, (), self.req_args_0)
+        bin = request.CreateCursor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4420,14 +4428,14 @@ class TestCreateGlyphCursor(unittest.TestCase):
             'source': 1412345132,
             'back_green': 52966,
             }
-        self.req_bin_0 = '\x5e\x00\x00\x08' '\x77\x2e\x8e\xfc' \
-            '\x54\x2e\xad\x2c' '\x78\x51\x63\x27' \
-            '\x1d\x90\xb4\x2c' '\xdb\xf2\x42\x5d' \
-            '\x78\x49\xfb\xe4' '\xce\xe6\x19\x64'
+        self.req_bin_0 = b'\x5e\x00\x00\x08' b'\x77\x2e\x8e\xfc' \
+            b'\x54\x2e\xad\x2c' b'\x78\x51\x63\x27' \
+            b'\x1d\x90\xb4\x2c' b'\xdb\xf2\x42\x5d' \
+            b'\x78\x49\xfb\xe4' b'\xce\xe6\x19\x64'
 
 
     def testPackRequest0(self):
-        bin = apply(request.CreateGlyphCursor._request.to_binary, (), self.req_args_0)
+        bin = request.CreateGlyphCursor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4450,11 +4458,11 @@ class TestFreeCursor(unittest.TestCase):
         self.req_args_0 = {
             'cursor': 553262138,
             }
-        self.req_bin_0 = '\x5f\x00\x00\x02' '\x20\xfa\x1c\x3a'
+        self.req_bin_0 = b'\x5f\x00\x00\x02' b'\x20\xfa\x1c\x3a'
 
 
     def testPackRequest0(self):
-        bin = apply(request.FreeCursor._request.to_binary, (), self.req_args_0)
+        bin = request.FreeCursor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4483,13 +4491,13 @@ class TestRecolorCursor(unittest.TestCase):
             'back_red': 64013,
             'cursor': 295995276,
             }
-        self.req_bin_0 = '\x60\x00\x00\x05' '\x11\xa4\x87\x8c' \
-            '\xae\xae\x81\x50' '\x43\x5e\xfa\x0d' \
-            '\x2f\x83\xc1\x7d'
+        self.req_bin_0 = b'\x60\x00\x00\x05' b'\x11\xa4\x87\x8c' \
+            b'\xae\xae\x81\x50' b'\x43\x5e\xfa\x0d' \
+            b'\x2f\x83\xc1\x7d'
 
 
     def testPackRequest0(self):
-        bin = apply(request.RecolorCursor._request.to_binary, (), self.req_args_0)
+        bin = request.RecolorCursor._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4515,22 +4523,22 @@ class TestQueryBestSize(unittest.TestCase):
             'item_class': 1,
             'width': 27916,
             }
-        self.req_bin_0 = '\x61\x01\x00\x03' '\x1e\x02\xc1\x1e' \
-            '\x6d\x0c\x87\xb7'
+        self.req_bin_0 = b'\x61\x01\x00\x03' b'\x1e\x02\xc1\x1e' \
+            b'\x6d\x0c\x87\xb7'
 
         self.reply_args_0 = {
             'height': 60728,
             'sequence_number': 34070,
             'width': 35970,
             }
-        self.reply_bin_0 = '\x01\x00\x85\x16' '\x00\x00\x00\x00' \
-            '\x8c\x82\xed\x38' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x85\x16' b'\x00\x00\x00\x00' \
+            b'\x8c\x82\xed\x38' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryBestSize._request.to_binary, (), self.req_args_0)
+        bin = request.QueryBestSize._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4548,7 +4556,7 @@ class TestQueryBestSize(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryBestSize._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryBestSize._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4571,8 +4579,8 @@ class TestQueryExtension(unittest.TestCase):
         self.req_args_0 = {
             'name': 'XTRA',
             }
-        self.req_bin_0 = '\x62\x00\x00\x03' '\x00\x04\x00\x00' \
-            '\x58\x54\x52\x41'
+        self.req_bin_0 = b'\x62\x00\x00\x03' b'\x00\x04\x00\x00' \
+            b'\x58\x54\x52\x41'
 
         self.reply_args_0 = {
             'sequence_number': 39952,
@@ -4581,14 +4589,14 @@ class TestQueryExtension(unittest.TestCase):
             'present': 1,
             'first_event': 202,
             }
-        self.reply_bin_0 = '\x01\x00\x9c\x10' '\x00\x00\x00\x00' \
-            '\x01\xc3\xca\x96' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x9c\x10' b'\x00\x00\x00\x00' \
+            b'\x01\xc3\xca\x96' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.QueryExtension._request.to_binary, (), self.req_args_0)
+        bin = request.QueryExtension._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4606,7 +4614,7 @@ class TestQueryExtension(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.QueryExtension._reply.to_binary, (), self.reply_args_0)
+        bin = request.QueryExtension._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4628,22 +4636,22 @@ class TestListExtensions(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x63\x00\x00\x01'
+        self.req_bin_0 = b'\x63\x00\x00\x01'
 
         self.reply_args_0 = {
             'sequence_number': 20200,
             'names': ['XTRA', 'XTRA-II'],
             }
-        self.reply_bin_0 = '\x01\x02\x4e\xe8' '\x00\x00\x00\x04' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x04\x58\x54\x52' '\x41\x07\x58\x54' \
-            '\x52\x41\x2d\x49' '\x49\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x02\x4e\xe8' b'\x00\x00\x00\x04' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x04\x58\x54\x52' b'\x41\x07\x58\x54' \
+            b'\x52\x41\x2d\x49' b'\x49\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ListExtensions._request.to_binary, (), self.req_args_0)
+        bin = request.ListExtensions._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4661,7 +4669,7 @@ class TestListExtensions(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.ListExtensions._reply.to_binary, (), self.reply_args_0)
+        bin = request.ListExtensions._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4685,41 +4693,41 @@ class TestChangeKeyboardMapping(unittest.TestCase):
             'keysyms': [[707837223, 99294840, 1205405602], [67157514, 879853050, 2059131033], [1139736188, 578113249, 1525786315], [1335349176, 246731334, 277761436], [1386594542, 1676932187, 1862777168], [535892916, 342718655, 195574000], [5712156, 1820472637, 848853860], [1123197289, 1664064022, 94999154], [380150420, 402902535, 1061375041], [510686316, 502245882, 422893644], [1423643601, 194077695, 403885178], [1571826296, 529249772, 623556591], [720045879, 37553034, 955963792], [513407882, 861125615, 219940695], [184890179, 472466494, 1649347894], [1679171989, 1991748404, 1674460475], [1762342934, 276695222, 1941684480], [886658026, 1860690072, 577030090], [227169721, 1390318675, 321524615], [2144591365, 545119116, 404205206]],
             'first_keycode': 250,
             }
-        self.req_bin_0 = '\x64\x14\x00\x3e' '\xfa\x03\x00\x00' \
-            '\x2a\x30\xbd\x27' '\x05\xeb\x1e\x78' \
-            '\x47\xd9\x07\xa2' '\x04\x00\xbe\x0a' \
-            '\x34\x71\x7d\xfa' '\x7a\xbb\xd8\x99' \
-            '\x43\xee\xfe\x7c' '\x22\x75\x4e\xe1' \
-            '\x5a\xf1\xa6\xcb' '\x4f\x97\xcf\xb8' \
-            '\x0e\xb4\xd2\x46' '\x10\x8e\x4d\x9c' \
-            '\x52\xa5\xc0\xee' '\x63\xf3\xf4\x5b' \
-            '\x6f\x07\xb9\x50' '\x1f\xf1\x13\xb4' \
-            '\x14\x6d\x78\xbf' '\x0b\xa8\x38\xf0' \
-            '\x00\x57\x29\x1c' '\x6c\x82\x35\x3d' \
-            '\x32\x98\x7b\x64' '\x42\xf2\xa1\x69' \
-            '\x63\x2f\x9a\x16' '\x05\xa9\x92\x72' \
-            '\x16\xa8\xa2\x94' '\x18\x03\xce\x07' \
-            '\x3f\x43\x4c\x41' '\x1e\x70\x74\x6c' \
-            '\x1d\xef\xa9\xfa' '\x19\x34\xd8\x4c' \
-            '\x54\xdb\x13\xd1' '\x0b\x91\x63\xff' \
-            '\x18\x12\xcc\x7a' '\x5d\xb0\x2a\x78' \
-            '\x1f\x8b\xb5\xec' '\x25\x2a\xb7\xef' \
-            '\x2a\xeb\x07\x37' '\x02\x3d\x03\x8a' \
-            '\x38\xfa\xd9\x90' '\x1e\x99\xfb\x8a' \
-            '\x33\x53\xbb\xef' '\x0d\x1c\x07\x57' \
-            '\x0b\x05\x33\x43' '\x1c\x29\x44\x3e' \
-            '\x62\x4f\x0d\x36' '\x64\x16\x21\x95' \
-            '\x76\xb7\xab\x34' '\x63\xce\x3d\x3b' \
-            '\x69\x0b\x38\x16' '\x10\x7e\x08\xb6' \
-            '\x73\xbb\xc1\x00' '\x34\xd9\x53\xea' \
-            '\x6e\xe7\xe0\x98' '\x22\x64\xc7\xca' \
-            '\x0d\x8a\x55\xb9' '\x52\xde\x94\x53' \
-            '\x13\x2a\x13\x87' '\x7f\xd3\xde\x05' \
-            '\x20\x7d\xdb\x8c' '\x18\x17\xae\x96'
+        self.req_bin_0 = b'\x64\x14\x00\x3e' b'\xfa\x03\x00\x00' \
+            b'\x2a\x30\xbd\x27' b'\x05\xeb\x1e\x78' \
+            b'\x47\xd9\x07\xa2' b'\x04\x00\xbe\x0a' \
+            b'\x34\x71\x7d\xfa' b'\x7a\xbb\xd8\x99' \
+            b'\x43\xee\xfe\x7c' b'\x22\x75\x4e\xe1' \
+            b'\x5a\xf1\xa6\xcb' b'\x4f\x97\xcf\xb8' \
+            b'\x0e\xb4\xd2\x46' b'\x10\x8e\x4d\x9c' \
+            b'\x52\xa5\xc0\xee' b'\x63\xf3\xf4\x5b' \
+            b'\x6f\x07\xb9\x50' b'\x1f\xf1\x13\xb4' \
+            b'\x14\x6d\x78\xbf' b'\x0b\xa8\x38\xf0' \
+            b'\x00\x57\x29\x1c' b'\x6c\x82\x35\x3d' \
+            b'\x32\x98\x7b\x64' b'\x42\xf2\xa1\x69' \
+            b'\x63\x2f\x9a\x16' b'\x05\xa9\x92\x72' \
+            b'\x16\xa8\xa2\x94' b'\x18\x03\xce\x07' \
+            b'\x3f\x43\x4c\x41' b'\x1e\x70\x74\x6c' \
+            b'\x1d\xef\xa9\xfa' b'\x19\x34\xd8\x4c' \
+            b'\x54\xdb\x13\xd1' b'\x0b\x91\x63\xff' \
+            b'\x18\x12\xcc\x7a' b'\x5d\xb0\x2a\x78' \
+            b'\x1f\x8b\xb5\xec' b'\x25\x2a\xb7\xef' \
+            b'\x2a\xeb\x07\x37' b'\x02\x3d\x03\x8a' \
+            b'\x38\xfa\xd9\x90' b'\x1e\x99\xfb\x8a' \
+            b'\x33\x53\xbb\xef' b'\x0d\x1c\x07\x57' \
+            b'\x0b\x05\x33\x43' b'\x1c\x29\x44\x3e' \
+            b'\x62\x4f\x0d\x36' b'\x64\x16\x21\x95' \
+            b'\x76\xb7\xab\x34' b'\x63\xce\x3d\x3b' \
+            b'\x69\x0b\x38\x16' b'\x10\x7e\x08\xb6' \
+            b'\x73\xbb\xc1\x00' b'\x34\xd9\x53\xea' \
+            b'\x6e\xe7\xe0\x98' b'\x22\x64\xc7\xca' \
+            b'\x0d\x8a\x55\xb9' b'\x52\xde\x94\x53' \
+            b'\x13\x2a\x13\x87' b'\x7f\xd3\xde\x05' \
+            b'\x20\x7d\xdb\x8c' b'\x18\x17\xae\x96'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeKeyboardMapping._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeKeyboardMapping._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4743,50 +4751,50 @@ class TestGetKeyboardMapping(unittest.TestCase):
             'count': 131,
             'first_keycode': 206,
             }
-        self.req_bin_0 = '\x65\x00\x00\x02' '\xce\x83\x00\x00'
+        self.req_bin_0 = b'\x65\x00\x00\x02' b'\xce\x83\x00\x00'
 
         self.reply_args_0 = {
             'keysyms': [[1550369014, 1683205347, 1879538861], [452613596, 1132022246, 357271408], [528724632, 2118423140, 640580111], [1981239140, 195173082, 497130901], [2001675011, 809172000, 1577756130], [739794769, 1774524806, 787951551], [1784021539, 1998872082, 1747812414], [396316053, 1525431160, 1808906812], [1676662850, 1222579650, 1205117622], [396026453, 1956747483, 1762026309], [1222502216, 1488139702, 1799119214], [1504675136, 1414564657, 419659384], [1934768917, 2095924224, 590955729], [582168798, 383228141, 1552516537], [1482483262, 1041896520, 1047041873], [1932705867, 292473490, 226147737], [780322016, 1965031752, 1481062205], [89811542, 1313413666, 686267194], [237776128, 1310737228, 792176733], [849034415, 1592538831, 837355505]],
             'sequence_number': 61409,
             }
-        self.reply_bin_0 = '\x01\x03\xef\xe1' '\x00\x00\x00\x3c' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x5c\x68\xc0\xf6' '\x64\x53\xac\xe3' \
-            '\x70\x07\x7c\xad' '\x1a\xfa\x55\xdc' \
-            '\x43\x79\x49\xe6' '\x15\x4b\x87\x70' \
-            '\x1f\x83\xb2\x98' '\x7e\x44\x92\x64' \
-            '\x26\x2e\x7a\x0f' '\x76\x17\x4f\x64' \
-            '\x0b\xa2\x1a\xda' '\x1d\xa1\x9d\x95' \
-            '\x77\x4f\x23\x03' '\x30\x3a\xfc\x20' \
-            '\x5e\x0a\xa5\xe2' '\x2c\x18\x5f\x51' \
-            '\x69\xc5\x19\x86' '\x2e\xf7\x2f\xbf' \
-            '\x6a\x56\x02\x23' '\x77\x24\x5e\x12' \
-            '\x68\x2d\x80\x3e' '\x17\x9f\x4d\x95' \
-            '\x5a\xec\x3b\x78' '\x6b\xd1\xba\x3c' \
-            '\x63\xef\xd8\x42' '\x48\xdf\x15\xc2' \
-            '\x47\xd4\xa2\xb6' '\x17\x9a\xe2\x55' \
-            '\x74\xa1\x98\xdb' '\x69\x06\x63\x45' \
-            '\x48\xdd\xe7\x48' '\x58\xb3\x35\xb6' \
-            '\x6b\x3c\x61\x6e' '\x59\xaf\x85\x40' \
-            '\x54\x50\x8b\x31' '\x19\x03\x7e\x78' \
-            '\x73\x52\x3b\x15' '\x7c\xed\x44\x00' \
-            '\x23\x39\x44\xd1' '\x22\xb3\x30\xde' \
-            '\x16\xd7\x98\xed' '\x5c\x89\x85\xb9' \
-            '\x58\x5c\xe6\x3e' '\x3e\x1a\x14\x48' \
-            '\x3e\x68\x97\x51' '\x73\x32\xc0\x4b' \
-            '\x11\x6e\xca\x92' '\x0d\x7a\xbd\x99' \
-            '\x2e\x82\xc4\xe0' '\x75\x20\x01\x48' \
-            '\x58\x47\x37\x3d' '\x05\x5a\x6a\x56' \
-            '\x4e\x49\x1a\x22' '\x28\xe7\x9b\x3a' \
-            '\x0e\x2c\x2d\x00' '\x4e\x20\x43\x4c' \
-            '\x2f\x37\xa8\x5d' '\x32\x9b\x3c\xaf' \
-            '\x5e\xec\x36\xcf' '\x31\xe9\x07\xf1'
+        self.reply_bin_0 = b'\x01\x03\xef\xe1' b'\x00\x00\x00\x3c' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x5c\x68\xc0\xf6' b'\x64\x53\xac\xe3' \
+            b'\x70\x07\x7c\xad' b'\x1a\xfa\x55\xdc' \
+            b'\x43\x79\x49\xe6' b'\x15\x4b\x87\x70' \
+            b'\x1f\x83\xb2\x98' b'\x7e\x44\x92\x64' \
+            b'\x26\x2e\x7a\x0f' b'\x76\x17\x4f\x64' \
+            b'\x0b\xa2\x1a\xda' b'\x1d\xa1\x9d\x95' \
+            b'\x77\x4f\x23\x03' b'\x30\x3a\xfc\x20' \
+            b'\x5e\x0a\xa5\xe2' b'\x2c\x18\x5f\x51' \
+            b'\x69\xc5\x19\x86' b'\x2e\xf7\x2f\xbf' \
+            b'\x6a\x56\x02\x23' b'\x77\x24\x5e\x12' \
+            b'\x68\x2d\x80\x3e' b'\x17\x9f\x4d\x95' \
+            b'\x5a\xec\x3b\x78' b'\x6b\xd1\xba\x3c' \
+            b'\x63\xef\xd8\x42' b'\x48\xdf\x15\xc2' \
+            b'\x47\xd4\xa2\xb6' b'\x17\x9a\xe2\x55' \
+            b'\x74\xa1\x98\xdb' b'\x69\x06\x63\x45' \
+            b'\x48\xdd\xe7\x48' b'\x58\xb3\x35\xb6' \
+            b'\x6b\x3c\x61\x6e' b'\x59\xaf\x85\x40' \
+            b'\x54\x50\x8b\x31' b'\x19\x03\x7e\x78' \
+            b'\x73\x52\x3b\x15' b'\x7c\xed\x44\x00' \
+            b'\x23\x39\x44\xd1' b'\x22\xb3\x30\xde' \
+            b'\x16\xd7\x98\xed' b'\x5c\x89\x85\xb9' \
+            b'\x58\x5c\xe6\x3e' b'\x3e\x1a\x14\x48' \
+            b'\x3e\x68\x97\x51' b'\x73\x32\xc0\x4b' \
+            b'\x11\x6e\xca\x92' b'\x0d\x7a\xbd\x99' \
+            b'\x2e\x82\xc4\xe0' b'\x75\x20\x01\x48' \
+            b'\x58\x47\x37\x3d' b'\x05\x5a\x6a\x56' \
+            b'\x4e\x49\x1a\x22' b'\x28\xe7\x9b\x3a' \
+            b'\x0e\x2c\x2d\x00' b'\x4e\x20\x43\x4c' \
+            b'\x2f\x37\xa8\x5d' b'\x32\x9b\x3c\xaf' \
+            b'\x5e\xec\x36\xcf' b'\x31\xe9\x07\xf1'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetKeyboardMapping._request.to_binary, (), self.req_args_0)
+        bin = request.GetKeyboardMapping._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4804,7 +4812,7 @@ class TestGetKeyboardMapping(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetKeyboardMapping._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetKeyboardMapping._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4827,15 +4835,15 @@ class TestChangeKeyboardControl(unittest.TestCase):
         self.req_args_0 = {
             'attrs': {'key_click_percent': -35, 'bell_percent': -53, 'led_mode': 1, 'bell_pitch': -17390, 'auto_repeat_mode': 2, 'bell_duration': -30281, 'key': 235, 'led': 192},
             }
-        self.req_bin_0 = '\x66\x00\x00\x0a' '\x00\x00\x00\xff' \
-            '\xdd\x00\x00\x00' '\xcb\x00\x00\x00' \
-            '\xbc\x12\x00\x00' '\x89\xb7\x00\x00' \
-            '\xc0\x00\x00\x00' '\x01\x00\x00\x00' \
-            '\xeb\x00\x00\x00' '\x02\x00\x00\x00'
+        self.req_bin_0 = b'\x66\x00\x00\x0a' b'\x00\x00\x00\xff' \
+            b'\xdd\x00\x00\x00' b'\xcb\x00\x00\x00' \
+            b'\xbc\x12\x00\x00' b'\x89\xb7\x00\x00' \
+            b'\xc0\x00\x00\x00' b'\x01\x00\x00\x00' \
+            b'\xeb\x00\x00\x00' b'\x02\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeKeyboardControl._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeKeyboardControl._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4857,7 +4865,7 @@ class TestGetKeyboardControl(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x67\x00\x00\x01'
+        self.req_bin_0 = b'\x67\x00\x00\x01'
 
         self.reply_args_0 = {
             'key_click_percent': 206,
@@ -4869,17 +4877,17 @@ class TestGetKeyboardControl(unittest.TestCase):
             'led_mask': 438224369,
             'bell_duration': 20235,
             }
-        self.reply_bin_0 = '\x01\x00\x75\xc5' '\x00\x00\x00\x05' \
-            '\x1a\x1e\xc5\xf1' '\xce\xfb\x35\xd3' \
-            '\x4f\x0b\x00\x00' '\xd9\xab\xa7\xa7' \
-            '\xf3\xa3\x81\xef' '\xa8\x99\xe1\xc7' \
-            '\xbd\x9b\xe4\x95' '\x94\xed\x8b\x96' \
-            '\xd3\x85\x87\xfa' '\xbf\xa6\x92\xd4' \
-            '\xef\xb7\xd6\xfa'
+        self.reply_bin_0 = b'\x01\x00\x75\xc5' b'\x00\x00\x00\x05' \
+            b'\x1a\x1e\xc5\xf1' b'\xce\xfb\x35\xd3' \
+            b'\x4f\x0b\x00\x00' b'\xd9\xab\xa7\xa7' \
+            b'\xf3\xa3\x81\xef' b'\xa8\x99\xe1\xc7' \
+            b'\xbd\x9b\xe4\x95' b'\x94\xed\x8b\x96' \
+            b'\xd3\x85\x87\xfa' b'\xbf\xa6\x92\xd4' \
+            b'\xef\xb7\xd6\xfa'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetKeyboardControl._request.to_binary, (), self.req_args_0)
+        bin = request.GetKeyboardControl._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4897,7 +4905,7 @@ class TestGetKeyboardControl(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetKeyboardControl._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetKeyboardControl._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -4920,11 +4928,11 @@ class TestBell(unittest.TestCase):
         self.req_args_0 = {
             'percent': -19,
             }
-        self.req_bin_0 = '\x68\xed\x00\x01'
+        self.req_bin_0 = b'\x68\xed\x00\x01'
 
 
     def testPackRequest0(self):
-        bin = apply(request.Bell._request.to_binary, (), self.req_args_0)
+        bin = request.Bell._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4951,12 +4959,12 @@ class TestChangePointerControl(unittest.TestCase):
             'do_thresh': 0,
             'threshold': -8309,
             }
-        self.req_bin_0 = '\x69\x00\x00\x03' '\xdb\x7e\x81\x1c' \
-            '\xdf\x8b\x00\x00'
+        self.req_bin_0 = b'\x69\x00\x00\x03' b'\xdb\x7e\x81\x1c' \
+            b'\xdf\x8b\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangePointerControl._request.to_binary, (), self.req_args_0)
+        bin = request.ChangePointerControl._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -4978,7 +4986,7 @@ class TestGetPointerControl(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x6a\x00\x00\x01'
+        self.req_bin_0 = b'\x6a\x00\x00\x01'
 
         self.reply_args_0 = {
             'accel_denom': 63793,
@@ -4986,14 +4994,14 @@ class TestGetPointerControl(unittest.TestCase):
             'threshold': 46060,
             'accel_num': 53419,
             }
-        self.reply_bin_0 = '\x01\x00\xea\x2a' '\x00\x00\x00\x00' \
-            '\xd0\xab\xf9\x31' '\xb3\xec\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\xea\x2a' b'\x00\x00\x00\x00' \
+            b'\xd0\xab\xf9\x31' b'\xb3\xec\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetPointerControl._request.to_binary, (), self.req_args_0)
+        bin = request.GetPointerControl._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5011,7 +5019,7 @@ class TestGetPointerControl(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetPointerControl._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetPointerControl._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -5037,12 +5045,12 @@ class TestSetScreenSaver(unittest.TestCase):
             'interval': -12318,
             'prefer_blank': 2,
             }
-        self.req_bin_0 = '\x6b\x00\x00\x03' '\xce\x7d\xcf\xe2' \
-            '\x02\x00\x00\x00'
+        self.req_bin_0 = b'\x6b\x00\x00\x03' b'\xce\x7d\xcf\xe2' \
+            b'\x02\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetScreenSaver._request.to_binary, (), self.req_args_0)
+        bin = request.SetScreenSaver._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5064,7 +5072,7 @@ class TestGetScreenSaver(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x6c\x00\x00\x01'
+        self.req_bin_0 = b'\x6c\x00\x00\x01'
 
         self.reply_args_0 = {
             'allow_exposures': 1,
@@ -5073,14 +5081,14 @@ class TestGetScreenSaver(unittest.TestCase):
             'prefer_blanking': 1,
             'interval': 60559,
             }
-        self.reply_bin_0 = '\x01\x00\x39\x52' '\x00\x00\x00\x00' \
-            '\x07\x49\xec\x8f' '\x01\x01\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x00\x39\x52' b'\x00\x00\x00\x00' \
+            b'\x07\x49\xec\x8f' b'\x01\x01\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetScreenSaver._request.to_binary, (), self.req_args_0)
+        bin = request.GetScreenSaver._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5098,7 +5106,7 @@ class TestGetScreenSaver(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetScreenSaver._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetScreenSaver._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -5123,12 +5131,12 @@ class TestChangeHosts(unittest.TestCase):
             'mode': 1,
             'host_family': 1,
             }
-        self.req_bin_0 = '\x6d\x01\x00\x03' '\x01\x00\x00\x04' \
-            '\xbc\xe2\x87\xc7'
+        self.req_bin_0 = b'\x6d\x01\x00\x03' b'\x01\x00\x00\x04' \
+            b'\xbc\xe2\x87\xc7'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ChangeHosts._request.to_binary, (), self.req_args_0)
+        bin = request.ChangeHosts._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5150,23 +5158,23 @@ class TestListHosts(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x6e\x00\x00\x01'
+        self.req_bin_0 = b'\x6e\x00\x00\x01'
 
         self.reply_args_0 = {
             'sequence_number': 31662,
             'mode': 1,
             'hosts': [{'family': 0, 'name': [34, 23, 178, 12]}, {'family': 0, 'name': [130, 236, 254, 15]}],
             }
-        self.reply_bin_0 = '\x01\x01\x7b\xae' '\x00\x00\x00\x04' \
-            '\x00\x02\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x04' '\x22\x17\xb2\x0c' \
-            '\x00\x00\x00\x04' '\x82\xec\xfe\x0f'
+        self.reply_bin_0 = b'\x01\x01\x7b\xae' b'\x00\x00\x00\x04' \
+            b'\x00\x02\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x04' b'\x22\x17\xb2\x0c' \
+            b'\x00\x00\x00\x04' b'\x82\xec\xfe\x0f'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ListHosts._request.to_binary, (), self.req_args_0)
+        bin = request.ListHosts._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5184,7 +5192,7 @@ class TestListHosts(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.ListHosts._reply.to_binary, (), self.reply_args_0)
+        bin = request.ListHosts._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -5207,11 +5215,11 @@ class TestSetAccessControl(unittest.TestCase):
         self.req_args_0 = {
             'mode': 0,
             }
-        self.req_bin_0 = '\x6f\x00\x00\x01'
+        self.req_bin_0 = b'\x6f\x00\x00\x01'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetAccessControl._request.to_binary, (), self.req_args_0)
+        bin = request.SetAccessControl._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5234,11 +5242,11 @@ class TestSetCloseDownMode(unittest.TestCase):
         self.req_args_0 = {
             'mode': 0,
             }
-        self.req_bin_0 = '\x70\x00\x00\x01'
+        self.req_bin_0 = b'\x70\x00\x00\x01'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetCloseDownMode._request.to_binary, (), self.req_args_0)
+        bin = request.SetCloseDownMode._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5261,11 +5269,11 @@ class TestKillClient(unittest.TestCase):
         self.req_args_0 = {
             'resource': 1679944210,
             }
-        self.req_bin_0 = '\x71\x00\x00\x02' '\x64\x21\xea\x12'
+        self.req_bin_0 = b'\x71\x00\x00\x02' b'\x64\x21\xea\x12'
 
 
     def testPackRequest0(self):
-        bin = apply(request.KillClient._request.to_binary, (), self.req_args_0)
+        bin = request.KillClient._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5290,18 +5298,18 @@ class TestRotateProperties(unittest.TestCase):
             'window': 109899869,
             'properties': [1758270592, 1474783027, 1362037883, 19212066, 1095428186, 1435857629, 337040311, 1202859364, 1426187239, 725785004, 1722986690, 435243112],
             }
-        self.req_bin_0 = '\x72\x00\x00\x0f' '\x06\x8c\xf0\x5d' \
-            '\x00\x0c\x96\x29' '\x68\xcd\x14\x80' \
-            '\x57\xe7\x67\x33' '\x51\x2f\x0c\x7b' \
-            '\x01\x25\x27\x22' '\x41\x4a\xe8\x5a' \
-            '\x55\x95\x72\xdd' '\x14\x16\xd3\xb7' \
-            '\x47\xb2\x2d\x64' '\x55\x01\xe3\xe7' \
-            '\x2b\x42\x99\xac' '\x66\xb2\xb0\xc2' \
-            '\x19\xf1\x48\x68'
+        self.req_bin_0 = b'\x72\x00\x00\x0f' b'\x06\x8c\xf0\x5d' \
+            b'\x00\x0c\x96\x29' b'\x68\xcd\x14\x80' \
+            b'\x57\xe7\x67\x33' b'\x51\x2f\x0c\x7b' \
+            b'\x01\x25\x27\x22' b'\x41\x4a\xe8\x5a' \
+            b'\x55\x95\x72\xdd' b'\x14\x16\xd3\xb7' \
+            b'\x47\xb2\x2d\x64' b'\x55\x01\xe3\xe7' \
+            b'\x2b\x42\x99\xac' b'\x66\xb2\xb0\xc2' \
+            b'\x19\xf1\x48\x68'
 
 
     def testPackRequest0(self):
-        bin = apply(request.RotateProperties._request.to_binary, (), self.req_args_0)
+        bin = request.RotateProperties._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5324,11 +5332,11 @@ class TestForceScreenSaver(unittest.TestCase):
         self.req_args_0 = {
             'mode': 1,
             }
-        self.req_bin_0 = '\x73\x01\x00\x01'
+        self.req_bin_0 = b'\x73\x01\x00\x01'
 
 
     def testPackRequest0(self):
-        bin = apply(request.ForceScreenSaver._request.to_binary, (), self.req_args_0)
+        bin = request.ForceScreenSaver._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5351,21 +5359,21 @@ class TestSetPointerMapping(unittest.TestCase):
         self.req_args_0 = {
             'map': [218, 142, 195, 250, 194],
             }
-        self.req_bin_0 = '\x74\x05\x00\x03' '\xda\x8e\xc3\xfa' \
-            '\xc2\x00\x00\x00'
+        self.req_bin_0 = b'\x74\x05\x00\x03' b'\xda\x8e\xc3\xfa' \
+            b'\xc2\x00\x00\x00'
 
         self.reply_args_0 = {
             'sequence_number': 11995,
             'status': 187,
             }
-        self.reply_bin_0 = '\x01\xbb\x2e\xdb' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\xbb\x2e\xdb' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetPointerMapping._request.to_binary, (), self.req_args_0)
+        bin = request.SetPointerMapping._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5383,7 +5391,7 @@ class TestSetPointerMapping(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.SetPointerMapping._reply.to_binary, (), self.reply_args_0)
+        bin = request.SetPointerMapping._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -5405,21 +5413,21 @@ class TestGetPointerMapping(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x75\x00\x00\x01'
+        self.req_bin_0 = b'\x75\x00\x00\x01'
 
         self.reply_args_0 = {
             'sequence_number': 35825,
             'map': [165, 233, 136, 197, 230],
             }
-        self.reply_bin_0 = '\x01\x05\x8b\xf1' '\x00\x00\x00\x02' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\xa5\xe9\x88\xc5' '\xe6\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\x05\x8b\xf1' b'\x00\x00\x00\x02' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\xa5\xe9\x88\xc5' b'\xe6\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetPointerMapping._request.to_binary, (), self.req_args_0)
+        bin = request.GetPointerMapping._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5437,7 +5445,7 @@ class TestGetPointerMapping(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetPointerMapping._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetPointerMapping._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -5460,22 +5468,22 @@ class TestSetModifierMapping(unittest.TestCase):
         self.req_args_0 = {
             'keycodes': [[72, 169], [161, 154], [26, 10], [108, 187], [110, 198], [225, 88], [33, 66], [189, 147]],
             }
-        self.req_bin_0 = '\x76\x02\x00\x05' '\x48\xa9\xa1\x9a' \
-            '\x1a\x0a\x6c\xbb' '\x6e\xc6\xe1\x58' \
-            '\x21\x42\xbd\x93'
+        self.req_bin_0 = b'\x76\x02\x00\x05' b'\x48\xa9\xa1\x9a' \
+            b'\x1a\x0a\x6c\xbb' b'\x6e\xc6\xe1\x58' \
+            b'\x21\x42\xbd\x93'
 
         self.reply_args_0 = {
             'sequence_number': 44526,
             'status': 188,
             }
-        self.reply_bin_0 = '\x01\xbc\xad\xee' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00'
+        self.reply_bin_0 = b'\x01\xbc\xad\xee' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00'
 
 
     def testPackRequest0(self):
-        bin = apply(request.SetModifierMapping._request.to_binary, (), self.req_args_0)
+        bin = request.SetModifierMapping._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5493,7 +5501,7 @@ class TestSetModifierMapping(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.SetModifierMapping._reply.to_binary, (), self.reply_args_0)
+        bin = request.SetModifierMapping._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -5515,22 +5523,22 @@ class TestGetModifierMapping(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x77\x00\x00\x01'
+        self.req_bin_0 = b'\x77\x00\x00\x01'
 
         self.reply_args_0 = {
             'sequence_number': 58377,
             'keycodes': [[3, 183], [213, 173], [9, 97], [35, 60], [249, 78], [175, 62], [237, 11], [26, 119]],
             }
-        self.reply_bin_0 = '\x01\x02\xe4\x09' '\x00\x00\x00\x04' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x00\x00\x00\x00' '\x00\x00\x00\x00' \
-            '\x03\xb7\xd5\xad' '\x09\x61\x23\x3c' \
-            '\xf9\x4e\xaf\x3e' '\xed\x0b\x1a\x77'
+        self.reply_bin_0 = b'\x01\x02\xe4\x09' b'\x00\x00\x00\x04' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x00\x00\x00\x00' b'\x00\x00\x00\x00' \
+            b'\x03\xb7\xd5\xad' b'\x09\x61\x23\x3c' \
+            b'\xf9\x4e\xaf\x3e' b'\xed\x0b\x1a\x77'
 
 
     def testPackRequest0(self):
-        bin = apply(request.GetModifierMapping._request.to_binary, (), self.req_args_0)
+        bin = request.GetModifierMapping._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:
@@ -5548,7 +5556,7 @@ class TestGetModifierMapping(unittest.TestCase):
             raise AssertionError(args)
 
     def testPackReply0(self):
-        bin = apply(request.GetModifierMapping._reply.to_binary, (), self.reply_args_0)
+        bin = request.GetModifierMapping._reply.to_binary(*(), **self.reply_args_0)
         try:
             assert bin == self.reply_bin_0
         except AssertionError:
@@ -5570,11 +5578,11 @@ class TestNoOperation(unittest.TestCase):
     def setUp(self):
         self.req_args_0 = {
             }
-        self.req_bin_0 = '\x7f\x00\x00\x01'
+        self.req_bin_0 = b'\x7f\x00\x00\x01'
 
 
     def testPackRequest0(self):
-        bin = apply(request.NoOperation._request.to_binary, (), self.req_args_0)
+        bin = request.NoOperation._request.to_binary(*(), **self.req_args_0)
         try:
             assert bin == self.req_bin_0
         except AssertionError:

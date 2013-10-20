@@ -71,7 +71,7 @@ class RawField(rq.ValueField):
         return val, len(val), None
 
     def parse_binary_value(self, data, display, length, format):
-        return str(data), ''
+        return data, ''
 
 
 class GetVersion(rq.ReplyRequest):
@@ -212,7 +212,7 @@ class EnableContext(rq.ReplyRequest):
 
     def __init__(self, callback, *args, **keys):
         self._callback = callback
-        apply(rq.ReplyRequest.__init__, (self, ) + args, keys)
+        rq.ReplyRequest.__init__(self, *args, **keys)
 
     def _parse_response(self, data):
         r, d = self._reply.parse_binary(data, self._display)

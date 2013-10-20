@@ -18,8 +18,7 @@
 
 from Xlib import error
 from Xlib.protocol import request
-
-import resource
+from Xlib.xobject import resource
 
 import re
 import string

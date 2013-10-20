@@ -17,9 +17,7 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from Xlib.protocol import request
-
-import resource
-import cursor
+from Xlib.xobject import resource, cursor
 
 class Fontable(resource.Resource):
     __fontable__ = resource.Resource.__resource__
@@ -85,8 +83,9 @@ class Font(Fontable):
         self.display.free_resource_id(self.id)
 
     def create_glyph_cursor(self, mask, source_char, mask_char,
-                            (fore_red, fore_green, fore_blue),
-                            (back_red, back_green, back_blue)):
+                            f_rgb, b_rgb):
+        fore_red, fore_green, fore_blue = f_rgb
+        back_red, back_green, back_blue = b_rgb
 
         cid = self.display.allocate_resource_id()
         request.CreateGlyphCursor(display = self.display,
