@@ -513,8 +513,10 @@ class Display:
             # Ignore errors caused by a signal recieved while blocking.
             # All other errors are re-raised.
             except select.error as err:
-                if err[0] != errno.EINTR:
-                    raise err
+                pass
+                # FIXME: err is not iterable
+                #if err[0] != errno.EINTR:
+                #    raise err
 
                 # We must lock send_and_recv before we can loop to
                 # the start of the loop
