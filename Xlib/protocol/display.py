@@ -19,11 +19,11 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # Standard modules
-import sys
-import select
-import struct
 import errno
+import select
 import socket
+import struct
+import sys
 
 # Xlib modules
 from Xlib import error
@@ -543,7 +543,7 @@ class Display:
                 if recieving:
                     try:
                         bytes_recv = self.socket.recv(2048)
-                    except socket.error, err:
+                    except socket.error as err:
                         self.close_internal('server: %s' % err[1])
                         raise self.socket_error
 

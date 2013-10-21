@@ -1,15 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import sys
 import os
-
-sys.path.insert(1, os.path.join(sys.path[0], '../..'))
-
-import types
 import string
 import struct
-from whrandom import randint, choice
+import sys
+import types
+from random import randint, choice
 
+sys.path.insert(1, os.path.join(sys.path[0], '..', '..'))
 from Xlib.protocol import request, structs, rq, event
 from Xlib import X, XK
 
@@ -72,7 +70,7 @@ def build_request(endian):
 
     fc.write(C_HEADER)
 
-    reqlist = request.major_codes.items()
+    reqlist = list(request.major_codes.items())
     reqlist.sort(lambda x, y: cmp(x[0], y[0]))
 
     genfuncs = []
@@ -97,7 +95,7 @@ def build_request(endian):
             sys.stderr.write('missing def for request: %s\n' % name)
         else:
             vardefs = request_var_defs.get(name, [()])
-            if type(vardefs) is not types.ListType:
+            if type(vardefs) is not list:
                 vardefs = [vardefs]
 
             i = 0
@@ -129,7 +127,7 @@ def build_request(endian):
                 sys.stderr.write('missing def for reply: %s\n' % name)
             else:
                 vardefs = reply_var_defs.get(name, ())
-                if type(vardefs) is not types.ListType:
+                if type(vardefs) is not list:
                     vardefs = [vardefs]
 
                 i = 0
@@ -183,7 +181,7 @@ def build_request(endian):
             reply_bins[parts[1]] = parts[2]
 
     fpy = open('test_requests_%s.py' % endian, 'w')
-    os.chmod('test_requests_%s.py' % endian, 0755)
+    os.chmod('test_requests_%s.py' % endian, 0o755)
 
     if endian == 'be':
         e = 'Big-endian'
@@ -267,7 +265,7 @@ def build_event(endian):
 
     fc.write(C_HEADER)
 
-    evtlist = event.event_class.items()
+    evtlist = list(event.event_class.items())
     evtlist.sort(lambda x, y: cmp(x[0], y[0]))
 
     genfuncs = []
@@ -302,7 +300,7 @@ def build_event(endian):
             sys.stderr.write('missing def for event: %s\n' % name)
         else:
             vardefs = event_var_defs.get(name, [()])
-            if type(vardefs) is not types.ListType:
+            if type(vardefs) is not list:
                 vardefs = [vardefs]
 
             i = 0
@@ -352,7 +350,7 @@ def build_event(endian):
             evt_bins[parts[1]] = parts[2]
 
     fpy = open('test_events_%s.py' % endian, 'w')
-    os.chmod('test_events_%s.py' % endian, 0755)
+    os.chmod('test_events_%s.py' % endian, 0o755)
 
     if endian == 'be':
         e = 'Big-endian'
@@ -478,7 +476,7 @@ def gen_func(fc, funcname, structname, outputname, pydef, cdef, vardefs):
                 def rand(x, rmin = rmin, rmax = rmax):
                     return randint(rmin, rmax)
 
-                vfdata = map(rand, range(0, vflen))
+                vfdata = list(map(rand, list(range(0, vflen))))
 
                 #
                 # Special case for a few in-line coded lists
@@ -488,7 +486,7 @@ def gen_func(fc, funcname, structname, outputname, pydef, cdef, vardefs):
                                   'xKeymapEvent'):
                     extra_vars.append('%s %s_def[%d] = { %s };'
                                       % (ctype, f.name, vflen,
-                                         string.join(map(str, vfdata), ', ')))
+                                         string.join(list(map(str, vfdata)), ', ')))
                     varfs[f.name] = ('memcpy(data.xstruct.map, %s_def, sizeof(%s_def));'
                                      % (f.name, f.name),
                                      vflen, 0)
@@ -497,7 +495,7 @@ def gen_func(fc, funcname, structname, outputname, pydef, cdef, vardefs):
                              % (ctype, f.name, deflen))
                     extra_vars.append('%s %s_def[%d] = { %s };'
                                       % (ctype, f.name, vflen,
-                                         string.join(map(str, vfdata), ', ')))
+                                         string.join(list(map(str, vfdata)), ', ')))
                     varfs[f.name] = ('memcpy(data.%s, %s_def, sizeof(%s_def));'
                                      % (f.name, f.name, f.name),
                                      vflen, 0)
@@ -551,7 +549,7 @@ def gen_func(fc, funcname, structname, outputname, pydef, cdef, vardefs):
                         pyd[f.type.fields[sj].name] = d[sj]
 
                     pydata.append(pyd)
-                    defdata.append('{ ' + string.join(map(str, d), ', ') + ' }')
+                    defdata.append('{ ' + string.join(list(map(str, d)), ', ') + ' }')
 
                 fc.write('x%s %s[%d];\n        ' % (vfname, f.name, vflen))
 
@@ -699,11 +697,11 @@ def gen_func(fc, funcname, structname, outputname, pydef, cdef, vardefs):
             elif format == 16:
                 ctype = 'CARD16'
                 clen = length + length % 2
-                cdata = string.join(map(str, data), ', ')
+                cdata = string.join(list(map(str, data)), ', ')
             elif format == 32:
                 ctype = 'CARD32'
                 clen = length
-                cdata = string.join(map(str, data), ', ')
+                cdata = string.join(list(map(str, data)), ', ')
 
             if not isinstance(f, rq.FixedPropertyData):
                 fc.write('%s %s[%d];\n        ' %
@@ -825,7 +823,7 @@ def gen_func(fc, funcname, structname, outputname, pydef, cdef, vardefs):
                 pyd[pyf.type.fields[sj].name] = d[sj]
 
             fc.write('{ %s def = { %s };\n      '
-                     % (t, string.join(map(str, d), ', ')))
+                     % (t, string.join(list(map(str, d)), ', ')))
             fc.write('memcpy(&data.xstruct.%s, &def, sizeof(def)); }\n        ' % f)
             args[pyf.name] = pyd
 
@@ -834,7 +832,7 @@ def gen_func(fc, funcname, structname, outputname, pydef, cdef, vardefs):
             fc.write('      data.xstruct.%s = %d;\n' % (f, val))
             args[pyf.name] = val
 
-    for code, length, format in varfs.values():
+    for code, length, format in list(varfs.values()):
         fc.write('      %s\n' % code);
 
     fc.write('''
@@ -870,12 +868,12 @@ def pad4(l):
     return l + (4 - l % 4) % 4
 
 def cstring(s):
-    return '"' + string.join(map(lambda c: '\\x%x' % ord(c), s), '') + '"'
+    return '"' + string.join(['\\x%x' % ord(c) for c in s], '') + '"'
 
 
 def build_args(args):
     kwlist = []
-    for kw, val in args.items():
+    for kw, val in list(args.items()):
         kwlist.append("            '%s': %s,\n" % (kw, repr(val)))
 
     return '{\n' + string.join(kwlist, '') + '            }'

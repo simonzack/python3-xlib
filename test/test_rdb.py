@@ -1,13 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import sys
 import os
+import sys
+import unittest
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import Xlib.rdb
-
-import unittest
 
 resources = """
 ! Single component

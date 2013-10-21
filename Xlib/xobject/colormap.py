@@ -16,12 +16,12 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import re
+import string
+
 from Xlib import error
 from Xlib.protocol import request
 from Xlib.xobject import resource
-
-import re
-import string
 
 rgb_res = [
     re.compile(r'\Argb:([0-9a-fA-F]{1,4})/([0-9a-fA-F]{1,4})/([0-9a-fA-F]{1,4})\Z'),

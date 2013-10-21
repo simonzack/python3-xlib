@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # examples/shapewin.py -- demonstrate shape extension
 #
 #    Copyright (C) 2002 Peter Liljenberg <petli@ctrl-c.liu.se>
+#    Copyright (C) 2013 LiuLang <gsushzhsosgsu@gmail.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,8 +20,8 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import sys
 import os
+import sys
 
 # Change path so we find Xlib
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
@@ -41,7 +42,7 @@ class Window:
 
         # print version
         r = self.d.shape_query_version()
-        print('SHAPE version %d.%d' % (r.major_version, r.minor_version))
+        print(('SHAPE version %d.%d' % (r.major_version, r.minor_version)))
 
 
         # Find which screen to open the window on
@@ -50,7 +51,8 @@ class Window:
         # background pattern
         bgsize = 20
 
-        bgpm = self.screen.root.create_pixmap(bgsize, bgsize, self.screen.root_depth)
+        bgpm = self.screen.root.create_pixmap(bgsize, bgsize,
+                                              self.screen.root_depth)
 
         bggc = self.screen.root.create_gc(foreground = self.screen.black_pixel,
                                           background = self.screen.black_pixel)
@@ -91,23 +93,27 @@ class Window:
         self.window.set_wm_hints(flags = Xutil.StateHint,
                                  initial_state = Xutil.NormalState)
 
-        self.window.set_wm_normal_hints(flags = (Xutil.PPosition | Xutil.PSize
-                                                 | Xutil.PMinSize),
+        self.window.set_wm_normal_hints(flags = (Xutil.PPosition |
+                                                 Xutil.PSize |
+                                                 Xutil.PMinSize),
                                         min_width = 50,
                                         min_height = 50)
 
         # The add and subtract shapes
         self.add_size = 60
 
-        self.add_pm = self.window.create_pixmap(self.add_size, self.add_size, 1)
+        self.add_pm = self.window.create_pixmap(self.add_size,
+                                                self.add_size, 1)
         gc = self.add_pm.create_gc(foreground = 0, background = 0)
         self.add_pm.fill_rectangle(gc, 0, 0, self.add_size, self.add_size)
         gc.change(foreground = 1)
-        self.add_pm.fill_arc(gc, 0, 0, self.add_size, self.add_size, 0, 360 * 64)
+        self.add_pm.fill_arc(gc, 0, 0, self.add_size, self.add_size,
+                             0, 360 * 64)
         gc.free()
 
         self.sub_size = 59
-        self.sub_pm = self.window.create_pixmap(self.sub_size, self.sub_size, 1)
+        self.sub_pm = self.window.create_pixmap(self.sub_size,
+                                                self.sub_size, 1)
         gc = self.sub_pm.create_gc(foreground = 0, background = 0)
         self.sub_pm.fill_rectangle(gc, 0, 0, self.sub_size, self.sub_size)
         gc.change(foreground = 1)

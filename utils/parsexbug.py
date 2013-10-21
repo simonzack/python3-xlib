@@ -1,21 +1,21 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-import sys
 import os
 import pprint
 import struct
-
+import sys
 
 # Change path so we find Xlib
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-def dummy_buffer(str, x, y = sys.maxint):
-    return str[x:y]
-
-__builtins__.buffer = dummy_buffer
-
 from Xlib.protocol import display, request, rq, event
 from Xlib import error
+
+def dummy_buffer(str, x, y = sys.maxsize):
+    return str[x:y]
+
+# FIXME:
+__builtins__.buffer = dummy_buffer
 
 # We don't want any fancy dictwrapper, just plain mappings
 rq.DictWrapper = lambda x: x
@@ -66,6 +66,8 @@ class ParseString:
         self.data = ''
 
     def __getitem__(self, i):
+        # FIXME: i is slice, not int
+        i = i.stop
         if i < 0:
             raise ValueError('bad string index: %d' % i)
 
@@ -78,7 +80,7 @@ class ParseString:
         return self.data[i]
 
     def __getslice__(self, i, j):
-        if j == sys.maxint:
+        if j == sys.maxsize:
             if self.get_data:
                 ps = ParseString(self.get_data)
                 self.get_data = None
@@ -149,13 +151,13 @@ class ParseXbug:
         self.last_serial = 0
         self.last_request = None
 
-        while 1:
+        while True:
             # Get next server item, always at least 32 bytes
             d = sdata[:32]
             if len(d) != 32:
                 # Print out remaining requests
                 try:
-                    self.get_requests(sys.maxint)
+                    self.get_requests(sys.maxsize)
                 except ValueError:
                     pass
                 return

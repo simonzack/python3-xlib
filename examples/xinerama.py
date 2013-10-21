@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # examples/xinerama.py -- demonstrate the Xinerama extension
 #
 #    Copyright (C) 2009 David H. Bronke <whitelynx@gmail.com>
+#    Copyright (C) 2013 LiuLang <gsushzhsosgsu@gmail.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,7 +20,9 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import sys, os, pprint
+import os
+import pprint
+import sys
 
 # Change path so we find Xlib
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
@@ -83,8 +86,9 @@ class Window:
         self.window.set_wm_hints(flags = Xutil.StateHint,
                                  initial_state = Xutil.NormalState)
 
-        self.window.set_wm_normal_hints(flags = (Xutil.PPosition | Xutil.PSize
-                                                 | Xutil.PMinSize),
+        self.window.set_wm_normal_hints(flags = (Xutil.PPosition |
+                                                 Xutil.PSize |
+                                                 Xutil.PMinSize),
                                         min_width = 20,
                                         min_height = 20)
 
@@ -99,7 +103,7 @@ class Window:
         self.pp.pprint(self.d.xinerama_query_screens()._data)
 
         # FIXME: This doesn't work!
-        #print "Xinerama info:"
+        #print("Xinerama info:")
         #self.pp.pprint(self.d.xinerama_get_info(self.d.screen().root_visual)._data)
 
         print("Xinerama state:")
@@ -125,7 +129,7 @@ class Window:
     # Main loop, handling events
     def loop(self):
         current = None
-        while 1:
+        while True:
             e = self.d.next_event()
 
             # Window has been destroyed, quit
@@ -142,4 +146,3 @@ class Window:
 
 if __name__ == '__main__':
     Window(display.Display()).loop()
-

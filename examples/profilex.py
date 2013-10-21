@@ -1,17 +1,17 @@
-#!/usr/bin/python
-#
+#!/usr/bin/env python3
+
+# Copyright (C) 2013 LiuLang <gsushzhsosgsu@gmail.com>
 # Program to generate profiling data.  Run with one argument,
 # the profile stats file to generate.
 
-import sys
 import os
+import profile
+import sys
 
 # Change path so we find Xlib
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from Xlib import X, display, Xatom
-
-import profile
 
 def dostuff():
     d = display.Display()
@@ -28,7 +28,8 @@ def dostuff():
         r.get_geometry()
         r.delete_property(Xatom.WM_NORMAL_HINTS)
         r.delete_property(Xatom.WM_NORMAL_HINTS)
-        r.change_property(Xatom.WM_NORMAL_HINTS, Xatom.STRING, 32, [1, 2, 3, 4])
+        r.change_property(Xatom.WM_NORMAL_HINTS, Xatom.STRING, 32,
+                          [1, 2, 3, 4])
         r.query_tree()
         cm.query_colors([0, 1, 2, 3, 4, 5, 6, 7])
 

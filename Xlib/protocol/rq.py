@@ -16,13 +16,10 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import types
-
-# Standard modules
+from array import array
+import struct
 import sys
 import traceback
-import struct
-from array import array
 import types
 
 # Xlib modules
@@ -437,7 +434,8 @@ class String16(ValueField):
         else:
             pad = b''
 
-        return struct.pack(*('>' + 'H' * slen, ) + tuple(val)) + pad, slen, None
+        return (struct.pack(*('>' + 'H' * slen, ) + tuple(val)) + pad,
+                slen, None)
 
     def parse_binary_value(self, data, display, length, format):
         if length == 'odd':
@@ -450,7 +448,8 @@ class String16(ValueField):
         else:
             slen = length
 
-        return struct.unpack('>' + 'H' * length, data[:length * 2]), data[slen * 2:]
+        return (struct.unpack('>' + 'H' * length, data[:length * 2]),
+                data[slen * 2:])
 
 
 
@@ -500,14 +499,18 @@ class List(ValueField):
             ret = [None] * int(length)
 
             if self.type.structcode is None:
-                for i in range(0, length):
+                for i in range(length):
                     ret[i], data = self.type.parse_binary(data, display)
             else:
                 scode = '=' + self.type.structcode
                 slen = struct.calcsize(scode)
                 pos = 0
                 for i in range(0, length):
-                    v = struct.unpack(scode, data[pos: pos + slen])
+                    # FIXME: remove try..except
+                    try:
+                        v = struct.unpack(scode, data[pos: pos + slen])
+                    except Exception:
+                        v = b'\x00\x00\x00\x00'
 
                     if self.type.structvalues == 1:
                         v = v[0]
@@ -530,7 +533,7 @@ class List(ValueField):
         # Single-char values, we'll assume that means integer lists.
         if self.type.structcode and len(self.type.structcode) == 1:
             data = array(struct_to_array_codes[self.type.structcode],
-                               val).tostring()
+                               val).tobytes()
         else:
             data = []
             for v in val:
@@ -678,7 +681,7 @@ class PropertyData(ValueField):
                 val = list(val)
 
             size = fmt // 8
-            data =  array(array_unsigned_codes[size], val).tostring()
+            data =  array(array_unsigned_codes[size], val).tobytes()
             dlen = len(val)
 
         dl = len(data)
@@ -799,7 +802,7 @@ class KeyboardMapping(ValueField):
             for i in range(len(v), keycodes):
                 a.append(X.NoSymbol)
 
-        return a.tostring(), len(value), keycodes
+        return a.tobytes(), len(value), keycodes
 
 
 class ModifierMapping(ValueField):
@@ -830,7 +833,7 @@ class ModifierMapping(ValueField):
             for i in range(len(v), keycodes):
                 a.append(0)
 
-        return a.tostring(), len(value), keycodes
+        return a.tobytes(), len(value), keycodes
 
 class EventField(ValueField):
     structcode = None

@@ -22,9 +22,9 @@
 
 
 # Standard modules
+import functools
 import re
 import sys
-import functools
 
 # Xlib modules
 from Xlib.support import lock

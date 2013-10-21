@@ -1,10 +1,12 @@
-# Distutils script for python-xlib
+#!/usr/bin/env python3
+
+# Distutils script for python3-xlib
 
 from distutils.core import setup
 
 import Xlib
 
-setup(name = 'python-xlib',
+setup(name = 'python3-xlib',
       version = Xlib.__version_string__,
 
       description = "Python X Library",

@@ -1,6 +1,7 @@
 # Xlib.xauth -- ~/.Xauthority access
 #
 #    Copyright (C) 2000 Peter Liljenberg <petli@ctrl-c.liu.se>
+#    Copyright (C) 2013 LiuLang <gsushzhsosgsu@gmail.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -81,13 +82,12 @@ class Xauthority:
                 if len(data) != length:
                     break
 
-                self.entries.append((family, addr, num, name, data))
+                self.entries.append((family, addr, num, name, data, ))
         except struct.error as e:
-            print ("Xlib.xauth: warning, failed to parse part of xauthority file (%s), aborting all further parsing" % filename)
-            #pass
+            print("Xlib.xauth: warning, failed to parse part of xauthority file (%s), aborting all further parsing" % filename)
 
         if len(self.entries) == 0:
-            print ("Xlib.xauth: warning, no xauthority details available")
+            print("Xlib.xauth: warning, no xauthority details available")
             # raise an error?  this should get partially caught by the XNoAuthError in get_best_auth..
 
     def __len__(self):

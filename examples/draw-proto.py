@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # examples/draw.py -- protocol test application.
 #
 #    Copyright (C) 2000 Peter Liljenberg <petli@ctrl-c.liu.se>
+#    Copyright (C) 2013 LiuLang <gsushzhsosgsu@gmail.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,8 +20,8 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import sys
 import os
+import sys
 
 # Change path so we find Xlib
 sys.path.insert(1, os.path.join(sys.path[0], '..'))

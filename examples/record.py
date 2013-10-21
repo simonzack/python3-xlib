@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # examples/record_demo.py -- demonstrate record extension
 #
 #    Copyright (C) 2006 Alex Badea <vamposdecampos@gmail.com>
+#    Copyright (C) 2013 LiuLang <gsushzhsosgsu@gmail.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -21,8 +22,8 @@
 # Simple demo for the RECORD extension
 # Not very much unlike the xmacrorec2 program in the xmacro package.
 
-import sys
 import os
+import sys
 
 # Change path so we find Xlib
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
@@ -52,7 +53,8 @@ def record_callback(reply):
 
     data = reply.data
     while len(data):
-        event, data = rq.EventField(None).parse_binary_value(data, record_dpy.display, None, None)
+        event, data = rq.EventField(None).parse_binary_value(data,
+                record_dpy.display, None, None)
 
         if event.type in [X.KeyPress, X.KeyRelease]:
             pr = event.type == X.KeyPress and "Press" or "Release"
@@ -87,15 +89,15 @@ ctx = record_dpy.record_create_context(
         0,
         [record.AllClients],
         [{
-                'core_requests': (0, 0),
-                'core_replies': (0, 0),
-                'ext_requests': (0, 0, 0, 0),
-                'ext_replies': (0, 0, 0, 0),
-                'delivered_events': (0, 0),
-                'device_events': (X.KeyPress, X.MotionNotify),
-                'errors': (0, 0),
-                'client_started': False,
-                'client_died': False,
+            'core_requests': (0, 0),
+            'core_replies': (0, 0),
+            'ext_requests': (0, 0, 0, 0),
+            'ext_replies': (0, 0, 0, 0),
+            'delivered_events': (0, 0),
+            'device_events': (X.KeyPress, X.MotionNotify),
+            'errors': (0, 0),
+            'client_started': False,
+            'client_died': False,
         }])
 
 # Enable the context; this only returns after a call to record_disable_context,

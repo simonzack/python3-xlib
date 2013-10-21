@@ -696,7 +696,7 @@ class Window(Drawable):
     def set_wm_colormap_windows(self, windows, onerror = None):
         self.change_property(self.display.get_atom('WM_COLORMAP_WINDOWS'),
                              Xatom.WINDOW, 32,
-                             map(lambda w: w.id, windows),
+                             [w.id for w in windows],
                              onerror = onerror)
 
     def get_wm_colormap_windows(self):
@@ -706,8 +706,8 @@ class Window(Drawable):
             return []
         else:
             cls = self.display.get_resource_class('window', Window)
-            return map(lambda i, d = self.display, c = cls: c(d, i),
-                       d.value)
+            return list(map(lambda i, d = self.display, c = cls: c(d, i),
+                       d.value))
 
 
     def set_wm_client_machine(self, name, onerror = None):

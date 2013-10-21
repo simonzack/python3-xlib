@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-import socket
-import select
-import sys
 import os
+import select
+import socket
+import sys
 
 def tcpbug(listenaddr, destaddr, outputfd):
     listen = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

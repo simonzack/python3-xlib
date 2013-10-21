@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import sys, os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
+import array
+import os
+import struct
+import sys
 import unittest
+
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from Xlib.protocol import request, rq, event
 import Xlib.protocol.event
-
-import struct
-import array
 
 class CmpArray:
     def __init__(self, *args, **kws):
@@ -65,7 +65,6 @@ def check_endian():
     if struct.unpack('BB', struct.pack('H', 0x0100))[0] != 0:
         sys.stderr.write('Little-endian tests, skipping on this system.\n')
         sys.exit(0)
-
 
 
 class TestCreateWindow(unittest.TestCase):

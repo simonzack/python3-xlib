@@ -1,6 +1,7 @@
 # Xlib.support.unix_connect -- Unix-type display connection functions
 #
 #    Copyright (C) 2000,2002 Peter Liljenberg <petli@ctrl-c.liu.se>
+#    Copyright (C) 2013 LiuLang <gsushzhsosgsu@gmail.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -16,26 +17,14 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import re
+import fcntl
 import os
 import platform
+import re
 import socket
 
-# FCNTL is deprecated from Python 2.2, so only import it if we doesn't
-# get the names we need.  Furthermore, FD_CLOEXEC seems to be missing
-# in Python 2.2.
-
-import fcntl
-
-if hasattr(fcntl, 'F_SETFD'):
-    F_SETFD = fcntl.F_SETFD
-    if hasattr(fcntl, 'FD_CLOEXEC'):
-        FD_CLOEXEC = fcntl.FD_CLOEXEC
-    else:
-        FD_CLOEXEC = 1
-else:
-    from FCNTL import F_SETFD, FD_CLOEXEC
-
+F_SETFD = fcntl.F_SETFD
+FD_CLOEXEC = fcntl.FD_CLOEXEC
 
 from Xlib import error, xauth
 
