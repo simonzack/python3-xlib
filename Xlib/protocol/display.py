@@ -513,8 +513,8 @@ class Display:
             # Ignore errors caused by a signal recieved while blocking.
             # All other errors are re-raised.
             except select.error as err:
-                pass
                 # FIXME: err is not iterable
+                print(err)
                 #if err[0] != errno.EINTR:
                 #    raise err
 
@@ -546,6 +546,7 @@ class Display:
                     try:
                         bytes_recv = self.socket.recv(2048)
                     except socket.error as err:
+                        # TODO: FIXME:
                         self.close_internal('server: %s' % err[1])
                         raise self.socket_error
 
