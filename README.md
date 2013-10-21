@@ -1,9 +1,22 @@
 About
 =====
-python3-xlib is python3 version of python-xlib <http://sourceforge.net/p/python-xlib>
+python3-xlib is python3 version of [python-xlib](http://sourceforge.net/p/python-xlib "python-xlib")
 
 Original python3 patch for python-xlib is written by @thomasklausner. Patch 
-can be found here <http://sourceforge.net/p/python-xlib/patches/5/>
+can be found [here](http://sourceforge.net/p/python-xlib/patches/5/ "patch")
+
+I needed a keybinding tool in my [project](https://github.com/LiuLang/kwplayer "kwplayer"),
+but no python3 version exists. So I spent some days porting python-xlib to
+python3, I searched and found a patch written by @thomasklausner. That patch
+was merged to python-xlib-0.14 and all source files were revised by now, and
+that is python3-xlib-0.14.
+
+This library is used in [another project](https://github.com/LiuLang/python3-keybinder "python3-keybinder").
+
+I'm not sure whether I'll have enough time to maintain this library,
+including improving its performance. Any help will be welcome.
+
+It has been 4 yeras since the latest version of python-xlib was released.
 
 
 Introduction(from python-xlib)
