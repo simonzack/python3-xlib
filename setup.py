@@ -9,11 +9,14 @@ import Xlib
 setup(name = 'python3-xlib',
       version = Xlib.__version_string__,
 
-      description = "Python X Library",
-      url = 'http://python-xlib.sourceforge.net/',
+      description = "Python3 X Library",
+      url = 'https://github.com/LiuLang/python3-xlib',
+      license = 'GPLv2',
 
       author = 'Peter Liljenberg',
       author_email = 'petli@ctrl-c.liu.se',
+      maintainer = 'LiuLang',
+      maintainer_email = 'gsushzhsosgsu@gmail.com',
 
       packages = [
           'Xlib',
@@ -23,4 +26,8 @@ setup(name = 'python3-xlib',
           'Xlib.support',
           'Xlib.xobject'
           ],
+
+      long_description = '''\
+python3-xlib is python3 version of python-xlib.
+'''
       )

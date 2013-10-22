@@ -49,7 +49,7 @@ Install
 In Debian like system, python2 is default python interpreter, so use `pip3`
 to install python3 modules:
 
-` # pip3 install python3-xlib`
+`# pip3 install python3-xlib`
 
 In Arch Linux:
 
